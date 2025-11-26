@@ -8,6 +8,9 @@ import {
   ScrollView,
   TouchableOpacity,
   useState,
+  Image,
+  TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
@@ -16,68 +19,278 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 // Navigasyon Yığını Oluşturma
 const Stack = createNativeStackNavigator();
 
-function HomeScreen({ navigation }) {
+//Login Ekranı
+function LoginScreen({ navigation }) {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
+  const handleLogin = async () => {
+    try {
+      const API_URL = "http://192.168.244.111:5000/api/auth/login";
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Giriş başarılı", data);
+
+        navigation.navigate("Home", { userName: data.user.name });
+      } else {
+        Alert.alert("Hata", data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Hata", "Sunucuya Bağlanılamadı");
+    }
+  };
   return (
-    <SafeAreaView style={styles.container} edges={("left", "right")}>
+    <SafeAreaView
+      style={[styles.container, { justifyContent: "center", padding: 20 }]}
+    >
+      <Text style={styles.authTitle}>Giriş Yap</Text>
+
+      {/* Email kutusu */}
+      <TextInput
+        style={styles.input}
+        placeholder="E-posta Adresi"
+        placeholderTextColor="#888"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      ></TextInput>
+
+      {/* Şifre Kutusu */}
+      <TextInput
+        style={styles.input}
+        placeholder="Şifre"
+        placeholderTextColor="#888"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={true}
+      ></TextInput>
+
+      {/* Giriş Butonu */}
+      <TouchableOpacity onPress={handleLogin}>
+        <Text style={styles.authButtonText}>Giriş Yap</Text>
+      </TouchableOpacity>
+
+      {/* Kayıt Ol Linki */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate("Register")}
+        style={{ marginTop: 20 }}
+      >
+        <Text style={{ color: "#ccc", textAlign: "center" }}>
+          Hesabın yok mu?{" "}
+          <Text style={{ color: "#f1c40f", fontWeight: "bold" }}>Kayıt Ol</Text>
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+//Register Sayfası
+function RegisterScreen({ navigation }) {
+  const [name, setName] = React.useState();
+  const [email, setEmail] = React.useState();
+  const [password, setPassword] = React.useState();
+
+  const handleRegister = async () => {
+    try {
+      const API_URL = "http://192.168.244.111:5000/api/auth/register";
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Başarılı", "Kayıt Oluşturuldu");
+
+        navigation.navigate("Login");
+      } else {
+        Alert.alert("Hata", data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Hata", "Sunucuya Bağlanılamadı");
+    }
+  };
+  return (
+    <SafeAreaView
+      style={([styles.container], { justifyContent: "center", padding: 20 })}
+    >
+      <TextInput
+        style={styles.input}
+        placeholder="Ad Soyad"
+        placeholderTextColor="#888"
+        value={name}
+        onChangeText={setName}
+      ></TextInput>
+
+      <TextInput
+        style={styles.input}
+        placeholder="E-posta"
+        placeholderTextColor="#888"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+      ></TextInput>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Şifre"
+        placeholderTextColor="#888"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry={true}
+      ></TextInput>
+
+      <TouchableOpacity style={styles.authButton} onPress={handleRegister}>
+        <Text style={styles.authButtonText}>Kayıt Ol</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={{ marginTop: 20 }}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={{ color: "#ccc", textAlign: "center" }}>
+          Zaten hesabın var mı?{" "}
+          <Text style={{ color: "#f1c40f", fontWeight: "bold" }}>
+            Giriş Yap
+          </Text>
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+function HomeScreen({ navigation, route }) {
+  const userName = route.params?.userName || "Misafir";
+  // Verileri dizide tutcaz
+  const [barbers, setBarbers] = React.useState([]);
+
+  //Uygulama açılınca verileri çek
+  React.useEffect(() => {
+    const fetchBarbers = async () => {
+      try {
+        const API_URL = "http://192.168.244.111:5000/api/barbers";
+
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        console.log("Veriler geldi");
+        setBarbers(data);
+      } catch (err) {
+        console.error("Hata:", err);
+      }
+    };
+    fetchBarbers();
+  }, []);
+
+  return (
+    <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
       {/* Header Kısmı */}
       <View style={styles.header}>
-        <Text style={styles.title}>Berber App</Text>
-        <Text style={styles.subtitle}>Welcome to the Berber App!</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View>
+            <Text style={styles.title}>Berber App</Text>
+            <Text style={styles.subtitle}>
+              Welcome to the Berber App! {userName}
+            </Text>
+          </View>
+
+          {/* Randevularım Butonu */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Appointments")}
+            style={{ backgroundColor: "#333", padding: 8, borderRadius: 8 }}
+          >
+            <Text style={{ fontSize: 20 }}>📅</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* İçerik Kısmı */}
       <ScrollView style={styles.content}>
         {/* Bölüm 1: Kampanyalar */}
         <Text style={styles.sectionTitle}>Kampanyalar</Text>
-
         {/* Kampanya Kartı */}
         <View style={styles.card}>
           {/* Resim yerine şimdilik gri kutu */}
-          <View style={styles.imagePlaceHolder} />
+          <Image
+            style={styles.campaignImage}
+            source={{
+              uri: "https://images.unsplash.com/photo-1542992015-4a0b729b1385?q=80&w=1189&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+            }}
+          ></Image>
           <View style={styles.cardInfo}>
             <Text style={styles.cardTitle}>Yaz Fırsatı</Text>
             <Text style={styles.cardSubTitle}>
-              Tüm saç kesimlerinde %20 indirim
+              Tüm saç kesimlerinde %50 indirim
             </Text>
           </View>
         </View>
         {/* Bölüm 2: Berberler */}
         <Text style={styles.sectionTitle}>Popüler Berberler</Text>
-
         {/* Tıklanabilir Kart (TouchableOpacitiy) */}
         {/* onPress olunca "Detail" sayfasına gidecek */}
         {/*Berber Kartı */}
-        <TouchableOpacity
-          style={styles.berberCard}
-          onPress={() => navigation.navigate("Detail")}
-        >
-          <View style={styles.berberImagePlaceHolder} />
-          <View style={styles.berberInfo}>
-            <Text style={styles.berberName}>Barbar King</Text>
-            <Text style={styles.berberLocation}>Aydın, Merkez</Text>
-            <Text style={styles.berberRating}>⭐ 4.8</Text>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.berberCard}>
-          <View style={styles.berberImagePlaceHolder} />
-          <View style={styles.berberInfo}>
-            <Text style={styles.berberName}>Barber King</Text>
-            <Text style={styles.berberLocation}>Aydın, Merkez</Text>
-            <Text style={styles.berberRating}>⭐ 4.5</Text>
-          </View>
-        </View>
+        {/* Veritabanından dönen listeyi dön */}
+        {barbers.map((berber) => (
+          <TouchableOpacity
+            key={berber._id} //MongoDb den gelen uniqueID
+            style={styles.berberCard}
+            onPress={() =>
+              navigation.navigate("Detail", {
+                barberId: berber._id,
+                barberName: berber.name,
+              })
+            }
+          >
+            {/* Eğer resim varsa göster, yoksa gri box */}
+            {berber.image ? (
+              <Image
+                source={{ uri: berber.image }}
+                style={[styles.berberImage]}
+              ></Image>
+            ) : (
+              <View style={styles.berberImagePlaceHolder}></View>
+            )}
+            <View style={styles.berberInfo}>
+              <Text style={styles.berberName}>{berber.name}</Text>
+              <Text style={styles.berberLocation}>{berber.location}</Text>
+              <Text style={styles.berberRating}>{berber.rating}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function DetailScreen({ navigation }) {
+function DetailScreen({ navigation, route }) {
+  const { barberId, barberName } = route.params;
   // Tarih ve Saat Seçimi için State Değişkenleri
   const [selectedDate, setSelectedDate] = React.useState(null);
   const [selectedTime, setSelectedTime] = React.useState(null);
+
+  //Dolu saatleri tutacak
+  const [bookedTimes, setBookedTimes] = React.useState([]);
 
   //Test için sabit tarih ve saatler
   const days = [
@@ -102,18 +315,45 @@ function DetailScreen({ navigation }) {
     "18.00",
     "19.00",
   ];
+
+  React.useEffect(() => {
+    if (selectedDate) {
+      chechkAvailability();
+    }
+  }, [selectedDate]); //SelectedDate değiştikçe
+  const chechkAvailability = async () => {
+    try {
+      const selectedDateObject = days.find((d) => d.id === selectedDate);
+
+      //Eğer seçili bir gün yoksa hata almamak için işlem yapmıyoruz
+      if (!selectedDateObject) return;
+
+      const formattedDate = `${selectedDateObject.day} ${selectedDateObject.name}`;
+
+      const API_URL =
+        "http://192.168.244.111:5000/api/appointments/availability";
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barberId: barberId,
+          date: formattedDate,
+        }),
+      });
+      const data = await response.json();
+      console.log("Dolu Saatler:", data);
+      setBookedTimes(data);
+    } catch (err) {
+      console.error("Müsaitlik Hatası", err);
+    }
+  };
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        { justifyContent: "center", alignItems: "center" },
-      ]}
-      edges={("left", "right")}
-    >
+    <SafeAreaView style={styles.container}>
       {/* Üst başlık ve geri butonu */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ color: "white", fontSize: 18 }}>←Geri</Text>
+          <Text style={{ color: "white", fontSize: 18 }}>← Geri</Text>
         </TouchableOpacity>
         <Text style={styles.title}> Oluştur</Text>
       </View>
@@ -154,25 +394,37 @@ function DetailScreen({ navigation }) {
         {/* Saat Seçimi */}
         <Text style={styles.sectionTitle}>Saat Seçin</Text>
         <View style={styles.timeContainer}>
-          {times.map((time, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => setSelectedTime(time)}
-              style={[
-                styles.timeCard,
-                selectedTime === time && styles.selectedCard,
-              ]}
-            >
-              <Text
+          {times.map((time, index) => {
+            //1. Bu saat dolu mu?
+            const isBooked = bookedTimes.includes(time);
+            return (
+              <TouchableOpacity
+                key={index}
+                disabled={isBooked}
+                onPress={() => setSelectedTime(time)}
                 style={[
-                  styles.timeText,
-                  selectedTime === time && styles.selectedText,
+                  styles.timeCard,
+                  selectedTime === time && styles.selectedCard,
+                  //Eğer doluysa gri ve sönük
+                  isBooked && { backgroundColor: "#333", opacity: 0.5 },
                 ]}
               >
-                {time}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.timeText,
+                    selectedTime === time && styles.selectedText,
+                    //Doluysa üstünü çiz
+                    isBooked && {
+                      textDecorationLine: "line-through",
+                      color: "#555",
+                    },
+                  ]}
+                >
+                  {time}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -184,12 +436,19 @@ function DetailScreen({ navigation }) {
             (!selectedDate || !selectedTime) && styles.disabledButton,
           ]}
           disabled={!selectedDate || !selectedTime}
-          onPress={() =>
+          onPress={() => {
+            //1- ID si seçili olan gün objesini buluyoruz
+            const selectedDayObject = days.find((d) => d.id === selectedDate);
+            //2- Tarih metni oluşturuyoruz
+            const formattedDate = `${selectedDayObject.day} ${selectedDayObject.name}`;
+
             navigation.navigate("Service", {
-              selectedDate: selectedDate,
+              barberId: barberId,
+              barberName: barberName,
+              selectedDate: formattedDate,
               selectedTime: selectedTime, // Tarih ve zaman bilgisini sonraki sayfaya geçtik
-            })
-          }
+            });
+          }}
         >
           <Text style={styles.buttonText}>Hizmet Seçimine Geç</Text>
         </TouchableOpacity>
@@ -199,21 +458,27 @@ function DetailScreen({ navigation }) {
 }
 
 function ServiceScreen({ navigation, route }) {
-  // Önceki sayfadan gelen veriyi karşılıyoruz
-  const { selectedDate, selectedTime } = route.params;
+  //1- Önceki sayfadan gelen veriyi karşılıyoruz
+  const { barberId, barberName, selectedDate, selectedTime } = route.params;
 
-  //Bu kısımda birden fazla şey seçebileceğilimiz için dizi kullanıyoruz
-
+  //2-Bu kısımda birden fazla şey seçebileceğilimiz için dizi kullanıyoruz
+  const [services, setServices] = React.useState([]); //Veritabanından gelen bilgiler için
   const [selectedServices, setSelectedServices] = React.useState([]);
-  //Fake hizmet verisi
-  const services = [
-    { id: 1, name: "Saç Kesimi", price: 50, duration: 30 },
-    { id: 2, name: "Sakal Tıraşı", price: 30, duration: 15 },
-    { id: 3, name: "Ağda", price: 40, duration: 20 },
-    { id: 4, name: "Saç Boyama", price: 100, duration: 60 },
-    { id: 5, name: "Masaj", price: 70, duration: 45 },
-    { id: 6, name: "Yüz Bakımı", price: 80, duration: 50 },
-  ];
+
+  //3- Sayfa açılınca API den hizmetleri çek
+  React.useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const API_URL = `http://192.168.244.111:5000/api/barbers/${barberId}`;
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        setServices(data);
+      } catch (err) {
+        console.error("Hizmetler çekilemedi:", err);
+      }
+    };
+    fetchServices();
+  }, [barberId]); //Berber id si her değiştiğinde 1 kez çalışır
 
   const toggleService = (serviceId) => {
     // Bu hizmet zaten seçili mi kontrol et
@@ -226,18 +491,18 @@ function ServiceScreen({ navigation, route }) {
     }
   };
 
-  // Toplam Fiyatı Hesapla
+  //5- Toplam Fiyatı Hesapla
   const totalPrice = services
-    .filter((service) => selectedServices.includes(service.id))
+    .filter((service) => selectedServices.includes(service._id))
     .reduce((total, service) => total + service.price, 0);
   return (
     <SafeAreaView style={styles.container}>
       {/* Üst Başlık ve Geri Butonu */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ color: "white", fontSize: 18 }}>Geri</Text>
+          <Text style={{ color: "white", fontSize: 18 }}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Hizmet Seçimi</Text>
+        <Text style={styles.title}>{barberName}</Text>
       </View>
 
       {/* Hizmet Listesi */}
@@ -245,12 +510,12 @@ function ServiceScreen({ navigation, route }) {
         <Text style={styles.sectionTitle}>Hizmetler</Text>
 
         {services.map((service) => {
-          const isSelected = selectedServices.includes(service.id); // Bu hizmet seçili mi
+          const isSelected = selectedServices.includes(service._id); // Bu hizmet seçili mi
 
           return (
             <TouchableOpacity
-              key={service.id}
-              onPress={() => toggleService(service.id)} //Fonksiyonu tetikle
+              key={service._id}
+              onPress={() => toggleService(service._id)} //Fonksiyonu tetikle
               style={[
                 styles.serviceCard,
                 isSelected && styles.selectedServiceCard,
@@ -264,7 +529,7 @@ function ServiceScreen({ navigation, route }) {
 
               {/* Sağ taraf fiyat ve + ikonu */}
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.servicePrice}>{service.price}</Text>
+                <Text style={styles.servicePrice}>{service.price} TL</Text>
                 {/* Seçiliyse Tik Değilse Artı Gösterir */}
                 <View
                   style={[
@@ -305,9 +570,10 @@ function ServiceScreen({ navigation, route }) {
             style={styles.button}
             onPress={() => {
               const selectedServicesDetails = services.filter((service) =>
-                selectedServices.includes(service.id)
+                selectedServices.includes(service._id)
               );
               navigation.navigate("Summary", {
+                barberName: barberName,
                 date: selectedDate,
                 time: selectedTime,
                 services: selectedServicesDetails, //Hizmet listesini geçtik
@@ -325,7 +591,43 @@ function ServiceScreen({ navigation, route }) {
 
 function SummaryScreen({ route, navigation }) {
   //Üstten gelen veriyi karşılıyoruz
-  const { date, time, services, totalPrice } = route.params;
+  const { barberName, date, time, services, totalPrice } = route.params;
+
+  //Randevuyu Kaydetme Fonskiyonu
+  const handleConfirm = async () => {
+    try {
+      //Gönderilecek Paket Backend Şemasına Uygun
+      const appointmentData = {
+        barberName: barberName,
+        date: date, //Seçilen Günün ID'si
+        time: time,
+        services: services,
+        totalPrice: totalPrice,
+      };
+
+      //2- API ye POST REQUEST
+      const API_URL = "http://192.168.244.111:5000/api/appointments";
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", //Ben sana JSON gönderiyorum demek
+        },
+        body: JSON.stringify(appointmentData), //Veriyi stringe çevirip iletir
+      });
+
+      //3- Sonucu Kontrol Et
+      if (response.ok) {
+        //Gelen hhtp kodu 200-299 arasında mı diye bakar
+        alert("Randevunuz Başarıyla Alındı");
+        navigation.navigate("Home");
+      } else {
+        alert("Bir Hata Meydana Geldi");
+      }
+    } catch (err) {
+      console.error("Bağlantı Hatası", err);
+      alert("Sunucuya Bağlanılamadı");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -341,7 +643,7 @@ function SummaryScreen({ route, navigation }) {
         {/* İşletme bilgisi */}
         <Text style={styles.sectionTitle}>İşletme</Text>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Makas Berber</Text>
+          <Text style={styles.summaryTitle}>{barberName}</Text>
           <Text style={{ color: "#888" }}>Aydın, Efeler</Text>
         </View>
 
@@ -389,13 +691,96 @@ function SummaryScreen({ route, navigation }) {
 
       {/* Onay Butonu */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={() => alert("Randevunuz Başarıyla Alındı")}
-        >
+        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
           <Text style={styles.confirmButtonText}>Randevuyu Onayla</Text>
         </TouchableOpacity>
       </View>
+    </SafeAreaView>
+  );
+}
+
+function AppointmentScreen({ navigation }) {
+  const [appointments, setAppointmets] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      const API_URL =
+        "http://192.168.244.111:5000/api/appointments/Ahmet Yılmaz";
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setAppointmets(data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Randevular Çekilemedi", err);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+          <Text style={{ color: "white", fontSize: 18 }}>← Ana Sayfa</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Randevularım</Text>
+      </View>
+
+      <ScrollView style={styles.content}>
+        {loading ? (
+          <Text style={{ color: "white", textAlign: "center", marginTop: 20 }}>
+            Yükleniyor...
+          </Text>
+        ) : appointments.length === 0 ? (
+          <Text style={{ color: "#888", textAlign: "center", marginTop: 20 }}>
+            Henüz randevunuz yok.
+          </Text>
+        ) : (
+          //Listelemeye Başlıyoruz
+          appointments.map((item) => (
+            <View key={item._id} style={styles.appointmentCard}>
+              {/* ÜSt Kısım: Berber Adı ve Tarih */}
+              <View style={styles.row}>
+                <Text style={styles.appBarberName}>{item.barberName}</Text>
+                <Text style={styles.appDate}>
+                  {item.date} - {item.time}
+                </Text>
+              </View>
+
+              {/* Orta Kısım: Hizmetler */}
+              <View style={{ marginTop: 10 }}>
+                {item.services.map((service, index) => (
+                  <Text key={index} style={styles.appServiceText}>
+                    • {service.name}
+                  </Text>
+                ))}
+              </View>
+
+              {/* Alt Kısım: Fiyat ve Durum */}
+              <View
+                style={[
+                  styles.row,
+                  {
+                    marginTop: 15,
+                    borderTopWidth: 1,
+                    borderTopColor: "#333",
+                    padding: 10,
+                  },
+                ]}
+              >
+                <Text style={styles.appPrice}>{item.totalPrice} TL</Text>
+                <Text style={{ color: "green", fontWeight: "bold" }}>
+                  Onaylandı
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -407,7 +792,13 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         {/* Default gelen beyaz ekranı kaldırır */}
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator
+          initialRouteName="Login"
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+
           {/* Uygulama Açılınca Görünecek Ekran */}
           <Stack.Screen name="Home" component={HomeScreen} />
 
@@ -417,6 +808,11 @@ export default function App() {
           <Stack.Screen name="Service" component={ServiceScreen} />
 
           <Stack.Screen name="Summary" component={SummaryScreen} />
+
+          <Stack.Screen
+            name="Appointments"
+            component={AppointmentScreen}
+          ></Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
       {/* SafeAreaView çentik ve yuvarlak köşeleri hesaba katarak içeriği güvenli bir alanda tutar */}
@@ -490,6 +886,15 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     alignItems: "center", //Dikeyde Ortalama
+  },
+  campaignImage: {
+    width: "100%",
+    height: 150,
+  },
+  berberImage: {
+    width: 100,
+    height: "100%",
+    resizeMode: "cover",
   },
   berberImagePlaceHolder: {
     width: 60,
@@ -657,5 +1062,63 @@ const styles = StyleSheet.create({
     color: "black",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  //Randevularım Ekranı Stilleri
+  appointmentCard: {
+    backgroundColor: "#1E1E1E",
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderLeftWidth: 5,
+    borderLeftColor: "#f1c40f",
+  },
+  appBarberName: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  appDate: {
+    color: "#ccc",
+    fontSize: 14,
+  },
+  appServiceText: {
+    color: "#888",
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  appPrice: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  //Auth Stilleri
+  authTitle: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "white",
+    textAlign: "center",
+    marginBottom: 40,
+  },
+  input: {
+    backgroundColor: "#1E1E1E",
+    color: "white",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  authButton: {
+    backgroundColor: "#f1c40f",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  authButtonText: {
+    color: "black",
+    fontWeight: "bold",
+    fontSize: 18,
   },
 });
