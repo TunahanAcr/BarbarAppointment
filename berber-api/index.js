@@ -9,6 +9,8 @@ const Appointment = require("./models/Appointment");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
+//Regex
+const { registerSchema, loginSchema } = require("./validation");
 const app = express();
 
 //Middleware
@@ -57,8 +59,6 @@ app.post("/api/appointments", async (req, res) => {
     //DB ye kaydet
     await yeniRandevu.save();
 
-    console.log("Yeni Randevu Kaydedildi", yeniRandevu);
-
     res
       .status(201)
       .json({ message: "Randevu Başarıyla Oluşturuldu", data: yeniRandevu });
@@ -72,8 +72,6 @@ app.post("/api/appointments", async (req, res) => {
 app.get("/api/appointments/:userName", async (req, res) => {
   try {
     const { userName } = req.params; //Linkteki ismi al
-
-    console.log("Aranan Kullanıcı:", userName);
 
     //Db de ismi eşleşenleri bul
     //.sort({createdAt: -1}) En yeni randevu en üstte olsun
@@ -93,20 +91,15 @@ app.post("/api/appointments/availability", async (req, res) => {
   try {
     const { barberId, date } = req.body;
 
-    console.log("Frontendden gelen", date, "(Tip:", typeof date, ")");
-
     //Bu berberin bu tarihteki tüm randevuları
 
     const randevular = await Appointment.find({
       barberName: "Makas Sanat", //Burayı ilerde Id yapacaz
       date: date,
+      status: { $ne: "cancelled" }, //$ne not equal anlamında
     }).select("time");
 
-    console.log("Veritabanından Bulunanlar:", randevular);
-
     const busyTimes = randevular.map((r) => r.time);
-    console.log(randevular);
-    console.log(busyTimes);
     res.json(busyTimes);
   } catch (error) {
     console.error(error);
@@ -117,6 +110,11 @@ app.post("/api/appointments/availability", async (req, res) => {
 //Register
 app.post("/api/auth/register", async (req, res) => {
   try {
+    const { error } = registerSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
     const { name, email, password } = req.body;
 
     //Eposta kayıtlı mı kontrolü
@@ -148,6 +146,12 @@ app.post("/api/auth/register", async (req, res) => {
 //Login
 app.post("/api/auth/login", async (req, res) => {
   try {
+    const { error } = loginSchema.validate(req.body);
+
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+
     const { email, password } = req.body;
 
     //1- Kullanıcı Var mı
@@ -177,6 +181,32 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+//Randevu İptali
+app.put("/api/appointments/cancel/:id", async (req, res) => {
+  try {
+    const { id } = req.params; //Linkteki ID yi al
+
+    //findByIdAndUpdate(ID,{Yeni Verileri}, {new:true})
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      id,
+      {
+        //Burada veriyi silmiyoruz sadece "status" diye bir alan uydurup güncelliyoruz
+        //MongoDB şemamda status yok ama sorun olmaz
+        status: "cancelled",
+      },
+      { new: true } //Güncelennmiş halini bana geri döndür
+    );
+
+    if (!updatedAppointment) {
+      return res.status(404).json({ message: "Randevu Bulunamadı" });
+    }
+
+    res.json({ message: "Randevu iptal edildi", data: updatedAppointment });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Hata oluştu" });
+  }
+});
 //Sunucuyu Başlat
 const PORT = 5000;
 

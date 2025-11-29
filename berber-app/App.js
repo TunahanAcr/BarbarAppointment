@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Navigasyon Yığını Oluşturma
 const Stack = createNativeStackNavigator();
@@ -23,6 +24,24 @@ const Stack = createNativeStackNavigator();
 function LoginScreen({ navigation }) {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+
+  //OTO-LOGİN CHECK
+  React.useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        const userName = await AsyncStorage.getItem("userName");
+
+        //Local Storage da token mevcutsa içeri al
+        if (token) {
+          navigation.replace("Home", { userName: userName });
+        }
+      } catch (err) {
+        console.log("Token bulunamadı");
+      }
+    };
+    checkLogin();
+  }, []);
 
   const handleLogin = async () => {
     try {
@@ -36,6 +55,10 @@ function LoginScreen({ navigation }) {
       const data = await response.json();
 
       if (response.ok) {
+        //Giriş yapıldığında tokeni locale gömüyoruz
+        await AsyncStorage.setItem("userToken", data.token);
+        await AsyncStorage.setItem("userName", data.user.name);
+
         console.log("Giriş başarılı", data);
 
         navigation.navigate("Home", { userName: data.user.name });
@@ -72,10 +95,11 @@ function LoginScreen({ navigation }) {
         value={password}
         onChangeText={setPassword}
         secureTextEntry={true}
+        autoCapitalize="none"
       ></TextInput>
 
       {/* Giriş Butonu */}
-      <TouchableOpacity onPress={handleLogin}>
+      <TouchableOpacity style={styles.authButton} onPress={handleLogin}>
         <Text style={styles.authButtonText}>Giriş Yap</Text>
       </TouchableOpacity>
 
@@ -124,8 +148,10 @@ function RegisterScreen({ navigation }) {
   };
   return (
     <SafeAreaView
-      style={([styles.container], { justifyContent: "center", padding: 20 })}
+      style={[styles.container, { justifyContent: "center", padding: 20 }]}
     >
+      <Text style={styles.authTitle}>Kayıt Ol</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Ad Soyad"
@@ -186,7 +212,6 @@ function HomeScreen({ navigation, route }) {
         const response = await fetch(API_URL);
         const data = await response.json();
 
-        console.log("Veriler geldi");
         setBarbers(data);
       } catch (err) {
         console.error("Hata:", err);
@@ -200,30 +225,69 @@ function HomeScreen({ navigation, route }) {
       <StatusBar style="light" />
 
       {/* Header Kısmı */}
-      <View style={styles.header}>
-        <View
-          style={{
+      {/* Ana kapsayıcı: Satır (row) olarak dizecek ve iki uca yaslayacak */}
+      <View
+        style={[
+          styles.header,
+          {
             flexDirection: "row",
             justifyContent: "space-between",
             alignItems: "center",
-          }}
-        >
-          <View>
-            <Text style={styles.title}>Berber App</Text>
-            <Text style={styles.subtitle}>
-              Welcome to the Berber App! {userName}
-            </Text>
-          </View>
+          },
+        ]}
+      >
+        {/* SOL TARAF: Başlık ve Alt Başlık */}
+        <View>
+          <Text style={styles.title}>Berber App</Text>
+          {/* Dinamik isim veya Misafir */}
+          <Text style={styles.subtitle}>
+            Hoş geldin, {route.params?.userName || "Misafir"}
+          </Text>
+        </View>
 
-          {/* Randevularım Butonu */}
+        {/* SAĞ TARAF: Butonlar Grubu (Yan yana) */}
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          {/* 1. Randevularım Butonu (Takvim İkonu) */}
           <TouchableOpacity
             onPress={() => navigation.navigate("Appointments")}
-            style={{ backgroundColor: "#333", padding: 8, borderRadius: 8 }}
+            style={{
+              backgroundColor: "#333",
+              padding: 10,
+              borderRadius: 8,
+              marginRight: 10, // <-- Çıkış butonuyla arasına mesafe
+            }}
           >
+            {/* Basit bir takvim emojisi */}
             <Text style={{ fontSize: 20 }}>📅</Text>
+          </TouchableOpacity>
+
+          {/* 2. Çıkış Butonu (Sarı Çerçeveli) */}
+          <TouchableOpacity
+            onPress={async () => {
+              //Çıkış yapılırsa hafızayı temizle
+              await AsyncStorage.removeItem("userToken");
+              await AsyncStorage.removeItem("userName");
+
+              navigation.replace("Login");
+            }}
+            style={{
+              backgroundColor: "#333",
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: "#f1c40f",
+            }}
+          >
+            <Text
+              style={{ color: "#f1c40f", fontWeight: "bold", fontSize: 12 }}
+            >
+              Çıkış
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
+      {/* --- HEADER SONU --- */}
 
       {/* İçerik Kısmı */}
       <ScrollView style={styles.content}>
@@ -342,7 +406,6 @@ function DetailScreen({ navigation, route }) {
         }),
       });
       const data = await response.json();
-      console.log("Dolu Saatler:", data);
       setBookedTimes(data);
     } catch (err) {
       console.error("Müsaitlik Hatası", err);
@@ -721,6 +784,36 @@ function AppointmentScreen({ navigation }) {
     }
   };
 
+  const handleCancel = async (appointmentId) => {
+    try {
+      Alert.alert(
+        "Randevu iptali",
+        "Bu randevuyu iptal etmek istediğinize emin misiniz?",
+        [
+          { text: "Vazgeç", style: "cancel" },
+          {
+            text: "Evet, İptal Et",
+            style: "destructive",
+            onPress: async () => {
+              const response = await fetch(
+                `http://192.168.244.111:5000/api/appointments/cancel/${appointmentId}`,
+                { method: "PUT" }
+              );
+              if (response.ok) {
+                alert("Randevu iptal edildi");
+                fetchAppointments(); //Yenilenmiş Liste
+              } else {
+                alert("Bir Hata oluştu");
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -773,9 +866,44 @@ function AppointmentScreen({ navigation }) {
                 ]}
               >
                 <Text style={styles.appPrice}>{item.totalPrice} TL</Text>
-                <Text style={{ color: "green", fontWeight: "bold" }}>
-                  Onaylandı
-                </Text>
+
+                {/* Koşullu Render */}
+                {item.status === "cancelled" ? (
+                  <Text style={{ color: "red", fontWeight: "bold" }}>
+                    İPTAL EDİLDİ
+                  </Text>
+                ) : (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text
+                      style={{
+                        color: "green",
+                        fontWeight: "bold",
+                        marginRight: 10,
+                      }}
+                    >
+                      Onaylandı
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => handleCancel(item._id)}
+                      style={{
+                        backgroundColor: "#c0392b",
+                        padding: 8,
+                        borderRadius: 5,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 12,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        İptal Et
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           ))
