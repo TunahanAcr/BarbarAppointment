@@ -11,14 +11,20 @@ import {
   Image,
   TextInput,
   Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
+import api from "./api";
 
 // Navigasyon Yığını Oluşturma
 const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 //Login Ekranı
 function LoginScreen({ navigation }) {
@@ -45,25 +51,18 @@ function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-      const API_URL = "http://192.168.244.111:5000/api/auth/login";
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await api.post("/auth/login", { email, password });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         //Giriş yapıldığında tokeni locale gömüyoruz
-        await AsyncStorage.setItem("userToken", data.token);
-        await AsyncStorage.setItem("userName", data.user.name);
+        await AsyncStorage.setItem("userToken", response.data.token);
+        await AsyncStorage.setItem("userName", response.data.user.name);
 
-        console.log("Giriş başarılı", data);
+        console.log("Giriş başarılı", response.data);
 
-        navigation.navigate("Home", { userName: data.user.name });
+        navigation.navigate("Home", { userName: response.data.user.name });
       } else {
-        Alert.alert("Hata", data.message);
+        Alert.alert("Hata", response.data.message);
       }
     } catch (err) {
       console.error(err);
@@ -125,21 +124,18 @@ function RegisterScreen({ navigation }) {
 
   const handleRegister = async () => {
     try {
-      const API_URL = "http://192.168.244.111:5000/api/auth/register";
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+      const response = await api.post("/auth/register", {
+        name,
+        email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         Alert.alert("Başarılı", "Kayıt Oluşturuldu");
 
         navigation.navigate("Login");
       } else {
-        Alert.alert("Hata", data.message);
+        Alert.alert("Hata", response.data.message);
       }
     } catch (err) {
       console.error(err);
@@ -199,22 +195,53 @@ function RegisterScreen({ navigation }) {
 }
 
 function HomeScreen({ navigation, route }) {
-  const userName = route.params?.userName || "Misafir";
+  const [userName, setUserName] = React.useState("Misafir");
   // Verileri dizide tutcaz
   const [barbers, setBarbers] = React.useState([]);
+
+  React.useEffect(() => {
+    //Kullanıcı adını hafızadan çeken fonksiyon
+    const loadUser = async () => {
+      try {
+        const storedName = await AsyncStorage.getItem("userName");
+        if (storedName) {
+          setUserName(storedName);
+        }
+      } catch (err) {
+        console.log("İsim okunamadı");
+      }
+    };
+
+    //Sayfa her açıldığında çalıştır
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadUser();
+    });
+
+    //İlk açılışta çalışsın
+    loadUser();
+
+    return unsubscribe;
+  }, [navigation]);
 
   //Uygulama açılınca verileri çek
   React.useEffect(() => {
     const fetchBarbers = async () => {
       try {
-        const API_URL = "http://192.168.244.111:5000/api/barbers";
-
-        const response = await fetch(API_URL);
-        const data = await response.json();
-
-        setBarbers(data);
+        const response = await api.get("/barbers");
+        setBarbers(response.data);
       } catch (err) {
-        console.error("Hata:", err);
+        // Hatanın detayını tam görelim
+        console.error("HATA YAKALANDI:", err);
+        if (err.response) {
+          // Sunucu cevap verdi ama 2xx değil (örn: 404, 500)
+          console.log("Sunucu Hatası:", err.response.data);
+          console.log("Status:", err.response.status);
+        } else if (err.request) {
+          // İstek gitti ama cevap gelmedi (Network hatası, IP yanlış vs.)
+          console.log("Sunucuya Ulaşılamadı (Network Error)");
+        } else {
+          console.log("Kod Hatası:", err.message);
+        }
       }
     };
     fetchBarbers();
@@ -240,9 +267,7 @@ function HomeScreen({ navigation, route }) {
         <View>
           <Text style={styles.title}>Berber App</Text>
           {/* Dinamik isim veya Misafir */}
-          <Text style={styles.subtitle}>
-            Hoş geldin, {route.params?.userName || "Misafir"}
-          </Text>
+          <Text style={styles.subtitle}>Hoş geldin, {userName}</Text>
         </View>
 
         {/* SAĞ TARAF: Butonlar Grubu (Yan yana) */}
@@ -394,19 +419,12 @@ function DetailScreen({ navigation, route }) {
 
       const formattedDate = `${selectedDateObject.day} ${selectedDateObject.name}`;
 
-      const API_URL =
-        "http://192.168.244.111:5000/api/appointments/availability";
-
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          barberId: barberId,
-          date: formattedDate,
-        }),
+      const response = await api.post("/appointments/availability", {
+        barberId: barberId,
+        date: formattedDate,
       });
-      const data = await response.json();
-      setBookedTimes(data);
+
+      setBookedTimes(response.data);
     } catch (err) {
       console.error("Müsaitlik Hatası", err);
     }
@@ -532,10 +550,8 @@ function ServiceScreen({ navigation, route }) {
   React.useEffect(() => {
     const fetchServices = async () => {
       try {
-        const API_URL = `http://192.168.244.111:5000/api/barbers/${barberId}`;
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        setServices(data);
+        const response = await api.get(`/barbers/${barberId}`);
+        setServices(response.data);
       } catch (err) {
         console.error("Hizmetler çekilemedi:", err);
       }
@@ -669,17 +685,10 @@ function SummaryScreen({ route, navigation }) {
       };
 
       //2- API ye POST REQUEST
-      const API_URL = "http://192.168.244.111:5000/api/appointments";
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", //Ben sana JSON gönderiyorum demek
-        },
-        body: JSON.stringify(appointmentData), //Veriyi stringe çevirip iletir
-      });
+      const response = await api.post("/appointments", appointmentData);
 
       //3- Sonucu Kontrol Et
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         //Gelen hhtp kodu 200-299 arasında mı diye bakar
         alert("Randevunuz Başarıyla Alındı");
         navigation.navigate("Home");
@@ -765,22 +774,35 @@ function SummaryScreen({ route, navigation }) {
 function AppointmentScreen({ navigation }) {
   const [appointments, setAppointmets] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false); //Aşağı çekip yenileme
 
   React.useEffect(() => {
+    fetchAppointments();
+
+    //Sayfaya her geri döndüğümde yüklesin diye
+    const unsubcribe = navigation.addListener("foucs", () => {
+      fetchAppointments;
+    });
+    return unsubcribe;
+  }, [navigation]);
+
+  //Aşağı çekince yenileme
+  const onFresh = React.useCallback(() => {
+    setRefreshing(true);
     fetchAppointments();
   }, []);
 
   const fetchAppointments = async () => {
     try {
-      const API_URL =
-        "http://192.168.244.111:5000/api/appointments/Ahmet Yılmaz";
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setAppointmets(data);
+      const response = await api.get("/appointments/my-appointments");
+      setAppointmets(response.data);
       setLoading(false);
+      console.log(response.data);
     } catch (err) {
       console.error("Randevular Çekilemedi", err);
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -795,11 +817,10 @@ function AppointmentScreen({ navigation }) {
             text: "Evet, İptal Et",
             style: "destructive",
             onPress: async () => {
-              const response = await fetch(
-                `http://192.168.244.111:5000/api/appointments/cancel/${appointmentId}`,
-                { method: "PUT" }
+              const response = await api.put(
+                `/appointments/cancel/${appointmentId}`
               );
-              if (response.ok) {
+              if (response.status === 200 || response.status === 201) {
                 alert("Randevu iptal edildi");
                 fetchAppointments(); //Yenilenmiş Liste
               } else {
@@ -823,11 +844,22 @@ function AppointmentScreen({ navigation }) {
         <Text style={styles.title}>Randevularım</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onFresh={onFresh}
+            tintColor="#fff"
+          />
+        }
+      >
         {loading ? (
-          <Text style={{ color: "white", textAlign: "center", marginTop: 20 }}>
-            Yükleniyor...
-          </Text>
+          <ActivityIndicator
+            size="large"
+            color="#f1c40f"
+            style={{ marginTop: 20 }}
+          />
         ) : appointments.length === 0 ? (
           <Text style={{ color: "#888", textAlign: "center", marginTop: 20 }}>
             Henüz randevunuz yok.
@@ -911,6 +943,42 @@ function AppointmentScreen({ navigation }) {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function ProfileScreen({ navigation }) {
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("userToken");
+      await AsyncStorage.removeItem("userName");
+      navigation.replace("Login");
+    } catch (err) {
+      console.log("Silme Hatası", err);
+    }
+  };
+
+  return (
+    <SafeAreaView
+      style={[
+        styles.container,
+        { justifyContent: "center", alignItems: "center" },
+      ]}
+    >
+      <Text
+        style={{
+          color: "white",
+          fontSize: 24,
+          fontWeight: "bold",
+          marginBottom: 20,
+        }}
+      >
+        Profilim
+      </Text>
+    </SafeAreaView>
+  );
+}
+
+function MainTabs() {
+  return <View></View>;
 }
 
 // Ana Uygulama Bileşeni

@@ -7,6 +7,7 @@ const Service = require("./models/Service");
 const Appointment = require("./models/Appointment");
 //Auth İşlemleri
 const bcrypt = require("bcryptjs");
+const auth = require("./middleware/auth");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
 //Regex
@@ -51,10 +52,19 @@ app.get("/api/barbers/:barberId", async (req, res) => {
 });
 
 //Randevu Oluşturma
-app.post("/api/appointments", async (req, res) => {
+app.post("/api/appointments", auth, async (req, res) => {
   try {
-    //Frontend den gelen req.body içindeki verileri al
-    const yeniRandevu = new Appointment(req.body); // requestin body sinde appointmentData var onu Appointment schemamıza koyuyoruz
+    //Frontend den sadece randevu detayları
+    const { barberName, date, time, services, totalPrice } = req.body;
+    const yeniRandevu = new Appointment({
+      userId: req.user.id, //Token
+      userName: req.user.name,
+      barberName,
+      date,
+      time,
+      services,
+      totalPrice,
+    }); // requestin body sinde appointmentData var onu Appointment schemamıza koyuyoruz
 
     //DB ye kaydet
     await yeniRandevu.save();
@@ -69,13 +79,13 @@ app.post("/api/appointments", async (req, res) => {
 });
 
 //Kullancının randevularını getir
-app.get("/api/appointments/:userName", async (req, res) => {
+app.get("/api/appointments/my-appointments", auth, async (req, res) => {
   try {
-    const { userName } = req.params; //Linkteki ismi al
+    const userId = req.user.id; //Giriş yapanın token içindeki id si
 
-    //Db de ismi eşleşenleri bul
+    //Db de id ile eşleşenleri bul
     //.sort({createdAt: -1}) En yeni randevu en üstte olsun
-    const randevular = await Appointment.find({ userName: userName }).sort({
+    const randevular = await Appointment.find({ userId: userId }).sort({
       createdAt: -1,
     });
 
@@ -168,7 +178,7 @@ app.post("/api/auth/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, name: user.name }, //Biletin içine ne yazayım
       process.env.JWT_SECRET, //Gizli Mühür
-      { expiresIn: "1h" } //Token 1 saat geçerli
+      { expiresIn: "1d" } //Token 1 gün geçerli
     );
 
     res.json({
@@ -182,7 +192,7 @@ app.post("/api/auth/login", async (req, res) => {
 });
 
 //Randevu İptali
-app.put("/api/appointments/cancel/:id", async (req, res) => {
+app.put("/api/appointments/cancel/:id", auth, async (req, res) => {
   try {
     const { id } = req.params; //Linkteki ID yi al
 

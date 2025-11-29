@@ -11,6 +11,11 @@ const AppointmentSchema = new mongoose.Schema({
     type: String,
     default: "Ahmet Yılmaz",
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   createdAt: {
     //Ne zaman aldı
     type: Date,
