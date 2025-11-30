@@ -38,4 +38,39 @@ const loginSchema = Joi.object({
   }),
 });
 
-module.exports = { registerSchema, loginSchema };
+//Randevu Oluşturma Kuralları
+const appointmentSchema = Joi.object({
+  barberName: Joi.string().min(3).max(50).required().messages({
+    "stirng.empty": "Berber adı boş bırakılamaz",
+    "any.required": "Berber adı zorunludur",
+  }),
+  date: Joi.string().required(),
+  time: Joi.string()
+    .pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .required()
+    .messages({
+      "string.empty": "Saat alanı boş bırakılamaz",
+      "string.pattern.base": "Lütfen geçerli bir saat girin (Örnek: 14:30)",
+      "any.required": "Saat alanı zorunludur",
+    }),
+
+  //Hizmetler bir array olmalı ve en az 1 tane seçilmeli
+  services: Joi.array()
+    .items(
+      Joi.object({
+        _id: Joi.string(),
+        name: Joi.string().required(),
+        price: Joi.number().min(0).required(), //Fiyat negatif olamaz
+        duration: Joi.string(),
+      })
+    )
+    .min(1)
+    .required()
+    .messages({
+      "array.min": "Lütfen en az bir hizmet seçin",
+      "any.required": "Hizmetler alanı zorunludur",
+    }),
+  totalPrice: Joi.number().min(0).required(), //Toplam fiyat negatif olamaz
+});
+
+module.exports = { registerSchema, loginSchema, appointmentSchema };

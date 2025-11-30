@@ -21,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import api from "./api";
+import useAppointmentStore from "./src/store/useAppointmentStore";
 
 // Navigasyon Yığını Oluşturma
 const Stack = createNativeStackNavigator();
@@ -199,6 +200,12 @@ function HomeScreen({ navigation, route }) {
   // Verileri dizide tutcaz
   const [barbers, setBarbers] = React.useState([]);
 
+  const [loading, setLoading] = React.useState(true);
+
+  const setStoreBarber = useAppointmentStore((state) => state.setBarber);
+
+  const { clearAppointment } = useAppointmentStore();
+
   React.useEffect(() => {
     //Kullanıcı adını hafızadan çeken fonksiyon
     const loadUser = async () => {
@@ -225,28 +232,48 @@ function HomeScreen({ navigation, route }) {
 
   //Uygulama açılınca verileri çek
   React.useEffect(() => {
+    //İptal kontrolcüsü
+    const controller = new AbortController();
+
     const fetchBarbers = async () => {
       try {
-        const response = await api.get("/barbers");
+        //İstek atılırken iptal sinyali de gönderilir
+        //Böylece "iptal et" dediğimizde bu istek durur
+        const response = await api.get("/barbers", {
+          signal: controller.signal,
+        });
         setBarbers(response.data);
       } catch (err) {
-        // Hatanın detayını tam görelim
-        console.error("HATA YAKALANDI:", err);
-        if (err.response) {
-          // Sunucu cevap verdi ama 2xx değil (örn: 404, 500)
-          console.log("Sunucu Hatası:", err.response.data);
-          console.log("Status:", err.response.status);
-        } else if (err.request) {
-          // İstek gitti ama cevap gelmedi (Network hatası, IP yanlış vs.)
-          console.log("Sunucuya Ulaşılamadı (Network Error)");
+        if (axios.isCancel(err)) {
+          console.log("İstek iptal edildi");
         } else {
-          console.log("Kod Hatası:", err.message);
+          console.error("Berberler çekilemedi:", err);
         }
+      } finally {
+        setLoading(false);
       }
     };
     fetchBarbers();
+
+    //Sayfa kapanırken iptal et
+    return () => {
+      controller.abort(); //Bileti iptal et
+    };
   }, []);
 
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#f1c40f" />
+        <Text style={{ color: "white", marginTop: 10 }}>Yükleniyor...</Text>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -344,12 +371,13 @@ function HomeScreen({ navigation, route }) {
           <TouchableOpacity
             key={berber._id} //MongoDb den gelen uniqueID
             style={styles.berberCard}
-            onPress={() =>
-              navigation.navigate("Detail", {
-                barberId: berber._id,
-                barberName: berber.name,
-              })
-            }
+            onPress={() => {
+              //Randevu bilgisini temizle
+              clearAppointment();
+              //Zustand ile seçili berberi ayarla
+              setStoreBarber({ _id: berber._id, name: berber.name });
+              navigation.navigate("Detail");
+            }}
           >
             {/* Eğer resim varsa göster, yoksa gri box */}
             {berber.image ? (
@@ -373,7 +401,8 @@ function HomeScreen({ navigation, route }) {
 }
 
 function DetailScreen({ navigation, route }) {
-  const { barberId, barberName } = route.params;
+  const barber = useAppointmentStore((state) => state.barber);
+  const setDateTime = useAppointmentStore((state) => state.setDateTime);
   // Tarih ve Saat Seçimi için State Değişkenleri
   const [selectedDate, setSelectedDate] = React.useState(null);
   const [selectedTime, setSelectedTime] = React.useState(null);
@@ -392,17 +421,17 @@ function DetailScreen({ navigation, route }) {
   ];
 
   const times = [
-    "09.00",
-    "10.00",
-    "11.00",
-    "12.00",
-    "13.00",
-    "14.00",
-    "15.00",
-    "16.00",
-    "17.00",
-    "18.00",
-    "19.00",
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "18:00",
+    "19:00",
   ];
 
   React.useEffect(() => {
@@ -420,7 +449,7 @@ function DetailScreen({ navigation, route }) {
       const formattedDate = `${selectedDateObject.day} ${selectedDateObject.name}`;
 
       const response = await api.post("/appointments/availability", {
-        barberId: barberId,
+        barberId: barber._id,
         date: formattedDate,
       });
 
@@ -523,12 +552,10 @@ function DetailScreen({ navigation, route }) {
             //2- Tarih metni oluşturuyoruz
             const formattedDate = `${selectedDayObject.day} ${selectedDayObject.name}`;
 
-            navigation.navigate("Service", {
-              barberId: barberId,
-              barberName: barberName,
-              selectedDate: formattedDate,
-              selectedTime: selectedTime, // Tarih ve zaman bilgisini sonraki sayfaya geçtik
-            });
+            //3- Zustand a tarih ve saati setliyoruz
+            setDateTime(formattedDate, selectedTime);
+
+            navigation.navigate("Service");
           }}
         >
           <Text style={styles.buttonText}>Hizmet Seçimine Geç</Text>
@@ -540,40 +567,32 @@ function DetailScreen({ navigation, route }) {
 
 function ServiceScreen({ navigation, route }) {
   //1- Önceki sayfadan gelen veriyi karşılıyoruz
-  const { barberId, barberName, selectedDate, selectedTime } = route.params;
+
+  const barber = useAppointmentStore((state) => state.barber);
+  const selectedServices = useAppointmentStore((state) => state.services);
+  const totalPrice = useAppointmentStore((state) => state.totalPrice);
+  const toggleService = useAppointmentStore((state) => state.toggleService);
 
   //2-Bu kısımda birden fazla şey seçebileceğilimiz için dizi kullanıyoruz
   const [services, setServices] = React.useState([]); //Veritabanından gelen bilgiler için
-  const [selectedServices, setSelectedServices] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
 
   //3- Sayfa açılınca API den hizmetleri çek
   React.useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await api.get(`/barbers/${barberId}`);
+        if (!barber) return navigation.goBack(); //Berber seçilmediyse geri dön
+        const response = await api.get(`/barbers/${barber._id}`);
         setServices(response.data);
       } catch (err) {
         console.error("Hizmetler çekilemedi:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchServices();
-  }, [barberId]); //Berber id si her değiştiğinde 1 kez çalışır
+  }, [barber]);
 
-  const toggleService = (serviceId) => {
-    // Bu hizmet zaten seçili mi kontrol et
-    if (selectedServices.includes(serviceId)) {
-      // EVET Seçili filter ile o id hariç diğerleini al
-      setSelectedServices(selectedServices.filter((id) => id !== serviceId));
-    } else {
-      // Hayır seçili değil ekle
-      setSelectedServices([...selectedServices, serviceId]);
-    }
-  };
-
-  //5- Toplam Fiyatı Hesapla
-  const totalPrice = services
-    .filter((service) => selectedServices.includes(service._id))
-    .reduce((total, service) => total + service.price, 0);
   return (
     <SafeAreaView style={styles.container}>
       {/* Üst Başlık ve Geri Butonu */}
@@ -581,52 +600,67 @@ function ServiceScreen({ navigation, route }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={{ color: "white", fontSize: 18 }}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{barberName}</Text>
+        <Text style={styles.title}>{barber?.name}</Text>
+        {/* Berber ismi clearAppointmentten dolayı hata vermesin diye varsa bas diyoruz*/}
       </View>
 
       {/* Hizmet Listesi */}
-      <ScrollView style={styles.content}>
-        <Text style={styles.sectionTitle}>Hizmetler</Text>
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="f1c40f"
+          style={{ marginTop: 50 }}
+        ></ActivityIndicator>
+      ) : (
+        <ScrollView style={styles.content}>
+          <Text style={styles.sectionTitle}>Hizmetler</Text>
 
-        {services.map((service) => {
-          const isSelected = selectedServices.includes(service._id); // Bu hizmet seçili mi
+          {services.map((service) => {
+            const isSelected = selectedServices.some(
+              (s) => s._id === service._id
+            );
 
-          return (
-            <TouchableOpacity
-              key={service._id}
-              onPress={() => toggleService(service._id)} //Fonksiyonu tetikle
-              style={[
-                styles.serviceCard,
-                isSelected && styles.selectedServiceCard,
-              ]}
-            >
-              {/* Sol taraf isim ve süre */}
-              <View>
-                <Text style={styles.serviceName}>{service.name}</Text>
-                <Text style={styles.serviceDuration}> {service.duration}</Text>
-              </View>
-
-              {/* Sağ taraf fiyat ve + ikonu */}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.servicePrice}>{service.price} TL</Text>
-                {/* Seçiliyse Tik Değilse Artı Gösterir */}
-                <View
-                  style={[
-                    styles.addButton,
-                    isSelected && { backgroundColor: "green" },
-                  ]}
-                >
-                  <Text style={{ color: "white", fontWeight: "bold" }}>
-                    {isSelected ? "✓" : "+"}
+            return (
+              <TouchableOpacity
+                key={service._id}
+                onPress={() => toggleService(service)} //Fonksiyonu tetikle
+                style={[
+                  styles.serviceCard,
+                  isSelected && styles.selectedServiceCard,
+                ]}
+              >
+                {/* Sol taraf isim ve süre */}
+                <View>
+                  <Text style={styles.serviceName}>{service.name}</Text>
+                  <Text style={styles.serviceDuration}>
+                    {" "}
+                    {service.duration}
                   </Text>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-        {/* Listenin altı butonun altında kalmasın diye boşluk */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+
+                {/* Sağ taraf fiyat ve + ikonu */}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={styles.servicePrice}>{service.price} TL</Text>
+                  {/* Seçiliyse Tik Değilse Artı Gösterir */}
+                  <View
+                    style={[
+                      styles.addButton,
+                      isSelected && { backgroundColor: "green" },
+                    ]}
+                  >
+                    <Text style={{ color: "white", fontWeight: "bold" }}>
+                      {isSelected ? "✓" : "+"}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+          {/* Listenin altı butonun altında kalmasın diye boşluk */}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
+
       {/* Alt Kısım Toplam Fiyat ve Onay Butonu */}
       {/* En az 1 hizmet seçiliyse göster */}
       {selectedServices.length > 0 && (
@@ -648,16 +682,7 @@ function ServiceScreen({ navigation, route }) {
           <TouchableOpacity
             style={styles.button}
             onPress={() => {
-              const selectedServicesDetails = services.filter((service) =>
-                selectedServices.includes(service._id)
-              );
-              navigation.navigate("Summary", {
-                barberName: barberName,
-                date: selectedDate,
-                time: selectedTime,
-                services: selectedServicesDetails, //Hizmet listesini geçtik
-                totalPrice: totalPrice, // Fiyat bilgisini geçtik
-              });
+              navigation.navigate("Summary");
             }}
           >
             <Text style={styles.buttonText}>Sepeti Onayla</Text>
@@ -670,18 +695,25 @@ function ServiceScreen({ navigation, route }) {
 
 function SummaryScreen({ route, navigation }) {
   //Üstten gelen veriyi karşılıyoruz
-  const { barberName, date, time, services, totalPrice } = route.params;
+  const { barber, date, time, services, totalPrice } = useAppointmentStore();
 
   //Randevuyu Kaydetme Fonskiyonu
   const handleConfirm = async () => {
     try {
+      //1- Gönderilecek veriyi paketle
+      const cleanServices = services.map((service) => ({
+        name: service.name,
+        price: service.price,
+        duration: service.duration,
+        _id: service._id,
+      }));
       //Gönderilecek Paket Backend Şemasına Uygun
       const appointmentData = {
-        barberName: barberName,
-        date: date, //Seçilen Günün ID'si
-        time: time,
-        services: services,
-        totalPrice: totalPrice,
+        barberName: barber.name, //Zustand dan alınıyor
+        date: date, //Zustand dan alınıyor
+        time: time, //Zustand dan alınıyor
+        services: cleanServices,
+        totalPrice: Number(totalPrice), //Zustand dan alınıyor
       };
 
       //2- API ye POST REQUEST
@@ -692,15 +724,17 @@ function SummaryScreen({ route, navigation }) {
         //Gelen hhtp kodu 200-299 arasında mı diye bakar
         alert("Randevunuz Başarıyla Alındı");
         navigation.navigate("Home");
-      } else {
-        alert("Bir Hata Meydana Geldi");
       }
     } catch (err) {
-      console.error("Bağlantı Hatası", err);
-      alert("Sunucuya Bağlanılamadı");
+      if (err.response && err.response.status === 400) {
+        const errorMessages = err.response.data.errors;
+
+        Alert.alert("Hata", errorMessages.join("\n"));
+      } else {
+        Alert.alert("Hata", "Sunucuya bağlanılamadı");
+      }
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -715,7 +749,7 @@ function SummaryScreen({ route, navigation }) {
         {/* İşletme bilgisi */}
         <Text style={styles.sectionTitle}>İşletme</Text>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>{barberName}</Text>
+          <Text style={styles.summaryTitle}>{barber.name}</Text>
           <Text style={{ color: "#888" }}>Aydın, Efeler</Text>
         </View>
 
@@ -780,8 +814,8 @@ function AppointmentScreen({ navigation }) {
     fetchAppointments();
 
     //Sayfaya her geri döndüğümde yüklesin diye
-    const unsubcribe = navigation.addListener("foucs", () => {
-      fetchAppointments;
+    const unsubcribe = navigation.addListener("focus", () => {
+      fetchAppointments();
     });
     return unsubcribe;
   }, [navigation]);
@@ -801,6 +835,7 @@ function AppointmentScreen({ navigation }) {
     } catch (err) {
       console.error("Randevular Çekilemedi", err);
     } finally {
+      //Veri geldiğinde Loading ve Refreshing işlemlerini durdurur
       setLoading(false);
       setRefreshing(false);
     }
@@ -849,7 +884,7 @@ function AppointmentScreen({ navigation }) {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onFresh={onFresh}
+            onRefresh={onFresh}
             tintColor="#fff"
           />
         }

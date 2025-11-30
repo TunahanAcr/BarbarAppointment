@@ -8,12 +8,14 @@ const api = axios.create({
 
 //Her istekten önce Token'ı otomaik ekleyeyen "Interceptor"
 api.interceptors.request.use(async (config) => {
+  //config axios tarafından arkaplanda otomatik oluşturulan bir js objesidir
+  //Her requestin headerına tokenı ekler
   const token = await AsyncStorage.getItem("userToken");
 
   console.log("Interceptor Çalıştı! Bulunan Token:", token);
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`; //Bearer Web standardı
   }
   return config;
 });

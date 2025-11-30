@@ -10,8 +10,12 @@ const bcrypt = require("bcryptjs");
 const auth = require("./middleware/auth");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
-//Regex
-const { registerSchema, loginSchema } = require("./validation");
+//Validation
+const {
+  registerSchema,
+  loginSchema,
+  appointmentSchema,
+} = require("./validation");
 const app = express();
 
 //Middleware
@@ -55,7 +59,35 @@ app.get("/api/barbers/:barberId", async (req, res) => {
 app.post("/api/appointments", auth, async (req, res) => {
   try {
     //Frontend den sadece randevu detayları
+    const { error } = appointmentSchema.validate(req.body, {
+      abortEarly: false, //Tüm hataları döndür
+    });
+
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return res
+        .status(400)
+        .json({ message: "Veri Hatası", errors: errorMessages });
+    }
+
+    //
+
     const { barberName, date, time, services, totalPrice } = req.body;
+
+    //Aynı berber, aynı gün, aynı saatte randevu var mı kontrol et
+    const existingAppointment = await Appointment.findOne({
+      barberName: barberName,
+      date: date,
+      time: time,
+      status: { $ne: "cancelled" }, //İptal edilmiş randevuları dikkate alma
+    });
+
+    if (existingAppointment) {
+      return res.status(400).json({
+        message: "Üzgünüz, seçtiğiniz saat dolu. Lütfen başka bir saat seçin.",
+      });
+    }
+
     const yeniRandevu = new Appointment({
       userId: req.user.id, //Token
       userName: req.user.name,
