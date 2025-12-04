@@ -709,6 +709,7 @@ function SummaryScreen({ route, navigation }) {
       }));
       //Gönderilecek Paket Backend Şemasına Uygun
       const appointmentData = {
+        barberId: barber._id, //Zustand dan alınıyor
         barberName: barber.name, //Zustand dan alınıyor
         date: date, //Zustand dan alınıyor
         time: time, //Zustand dan alınıyor

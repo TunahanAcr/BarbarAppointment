@@ -40,6 +40,7 @@ const loginSchema = Joi.object({
 
 //Randevu Oluşturma Kuralları
 const appointmentSchema = Joi.object({
+  barberId: Joi.string().required(),
   barberName: Joi.string().min(3).max(50).required().messages({
     "stirng.empty": "Berber adı boş bırakılamaz",
     "any.required": "Berber adı zorunludur",

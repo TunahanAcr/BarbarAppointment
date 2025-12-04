@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const AppointmentSchema = new mongoose.Schema({
+  barberId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Barber",
+    required: true,
+  },
   barberName: String, //Hangi Berber
   date: String, //Hangi Gün
   time: String, //Saat Kaçta

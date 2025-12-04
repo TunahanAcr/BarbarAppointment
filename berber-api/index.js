@@ -18,6 +18,9 @@ const {
 } = require("./validation");
 const app = express();
 
+const FAKE_HASH =
+  "$2b$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa";
+
 //Middleware
 app.use(cors()); //Şimdilik her isteğe izin ver
 app.use(express.json()); //Gelen string verileri json olarak oku
@@ -72,7 +75,7 @@ app.post("/api/appointments", auth, async (req, res) => {
 
     //
 
-    const { barberName, date, time, services, totalPrice } = req.body;
+    const { barberId, barberName, date, time, services, totalPrice } = req.body;
 
     //Aynı berber, aynı gün, aynı saatte randevu var mı kontrol et
     const existingAppointment = await Appointment.findOne({
@@ -89,6 +92,7 @@ app.post("/api/appointments", auth, async (req, res) => {
     }
 
     const yeniRandevu = new Appointment({
+      barberId: barberId,
       userId: req.user.id, //Token
       userName: req.user.name,
       barberName,
@@ -131,12 +135,13 @@ app.get("/api/appointments/my-appointments", auth, async (req, res) => {
 //Belirli bir gündeki dolu saatleri getir
 app.post("/api/appointments/availability", async (req, res) => {
   try {
+    console.log(req.body);
     const { barberId, date } = req.body;
 
     //Bu berberin bu tarihteki tüm randevuları
 
     const randevular = await Appointment.find({
-      barberName: "Makas Sanat", //Burayı ilerde Id yapacaz
+      barberId: barberId,
       date: date,
       status: { $ne: "cancelled" }, //$ne not equal anlamında
     }).select("time");
@@ -199,12 +204,18 @@ app.post("/api/auth/login", async (req, res) => {
     //1- Kullanıcı Var mı
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Kullanıcı Bulunamadı" });
+      return res.status(400).json({ message: "Yanlış şifre veya email" });
     }
-    //2- Kullanıcı Var mı
-    const isMatch = await bcrypt.compare(password, user.password);
+    //Kullacnı yoksa bile timing attack önlemek için şifre kontrolü yap
+    let compareHash = FAKE_HASH;
+
+    if (user) {
+      compareHash = user.password;
+    }
+
+    const isMatch = await bcrypt.compare(password, compareHash);
     if (!isMatch) {
-      return res.status(400).json({ message: "Şifre Yanlış" });
+      return res.status(400).json({ message: "Yanlış şifre veya email" });
     }
     //3- Başarılı Giriş Token Üret
     const token = jwt.sign(
@@ -227,13 +238,18 @@ app.post("/api/auth/login", async (req, res) => {
 app.put("/api/appointments/cancel/:id", auth, async (req, res) => {
   try {
     const { id } = req.params; //Linkteki ID yi al
+    const userId = req.user.id; //Token dan kullanıcı id sini al
+
+    //Sadece kendi randevusunu iptal edebilsin
 
     //findByIdAndUpdate(ID,{Yeni Verileri}, {new:true})
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      id,
+    const updatedAppointment = await Appointment.findOneAndUpdate(
+      {
+        _id: id,
+        userId: userId,
+      },
       {
         //Burada veriyi silmiyoruz sadece "status" diye bir alan uydurup güncelliyoruz
-        //MongoDB şemamda status yok ama sorun olmaz
         status: "cancelled",
       },
       { new: true } //Güncelennmiş halini bana geri döndür
