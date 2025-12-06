@@ -15,6 +15,7 @@ const {
   registerSchema,
   loginSchema,
   appointmentSchema,
+  updateSchema,
 } = require("./validation");
 const app = express();
 
@@ -41,7 +42,7 @@ app.get("/api/barbers", async (req, res) => {
     const barbers = await Barber.find();
     res.json(barbers);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Sunucu Hatası" });
   }
 });
 
@@ -54,7 +55,7 @@ app.get("/api/barbers/:barberId", async (req, res) => {
 
     res.json(services);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Geçersiz ID" });
   }
 });
 
@@ -73,13 +74,11 @@ app.post("/api/appointments", auth, async (req, res) => {
         .json({ message: "Veri Hatası", errors: errorMessages });
     }
 
-    //
-
-    const { barberId, barberName, date, time, services, totalPrice } = req.body;
+    const { barberId, barberName, date, time, services } = req.body;
 
     //Aynı berber, aynı gün, aynı saatte randevu var mı kontrol et
     const existingAppointment = await Appointment.findOne({
-      barberName: barberName,
+      barberId: barberId,
       date: date,
       time: time,
       status: { $ne: "cancelled" }, //İptal edilmiş randevuları dikkate alma
@@ -91,8 +90,18 @@ app.post("/api/appointments", auth, async (req, res) => {
       });
     }
 
+    //Toplam fiyatı db den hesapla
+    const servicesFromDb = await Service.find({
+      _id: { $in: services.map((s) => s._id) },
+    });
+
+    const totalPrice = servicesFromDb.reduce(
+      (sum, service) => sum + service.price,
+      0
+    );
+
     const yeniRandevu = new Appointment({
-      barberId: barberId,
+      barberId,
       userId: req.user.id, //Token
       userName: req.user.name,
       barberName,
@@ -121,9 +130,11 @@ app.get("/api/appointments/my-appointments", auth, async (req, res) => {
 
     //Db de id ile eşleşenleri bul
     //.sort({createdAt: -1}) En yeni randevu en üstte olsun
-    const randevular = await Appointment.find({ userId: userId }).sort({
-      createdAt: -1,
-    });
+    const randevular = await Appointment.find({ userId: userId })
+      .sort({
+        createdAt: -1,
+      })
+      .select("-__v"); //__v yi istemiyoruz
 
     res.json(randevular);
   } catch (err) {
@@ -135,8 +146,12 @@ app.get("/api/appointments/my-appointments", auth, async (req, res) => {
 //Belirli bir gündeki dolu saatleri getir
 app.post("/api/appointments/availability", async (req, res) => {
   try {
-    console.log(req.body);
     const { barberId, date } = req.body;
+
+    // {"barberId": { "$ne": null },"date": { "$gt": "" }} tarzında bir sorgu gelirse bütün boş saatler döner ve çok fazla veri varsa sunucu çöker. Bunu engellemek için tip kontrolü yapıyoruz
+    if (typeof barberId !== "string" || typeof date !== "string") {
+      return res.status(400).json({ message: "Geçersiz Veri Formatı" });
+    }
 
     //Bu berberin bu tarihteki tüm randevuları
 
@@ -159,7 +174,11 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const { error } = registerSchema.validate(req.body);
     if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+      const errorMessages = error.details.map((detail) => detail.message);
+      console.log("Kayıt Hatası:", errorMessages);
+      return res
+        .status(400)
+        .json({ message: "Veri Hatası", errors: errorMessages });
     }
 
     const { name, email, password } = req.body;
@@ -219,7 +238,7 @@ app.post("/api/auth/login", async (req, res) => {
     }
     //3- Başarılı Giriş Token Üret
     const token = jwt.sign(
-      { id: user._id, name: user.name }, //Biletin içine ne yazayım
+      { id: user._id, name: user.name, email: user.email }, //Biletin içine ne yazayım
       process.env.JWT_SECRET, //Gizli Mühür
       { expiresIn: "1d" } //Token 1 gün geçerli
     );
@@ -263,6 +282,48 @@ app.put("/api/appointments/cancel/:id", auth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Hata oluştu" });
+  }
+});
+
+app.put("/api/users/update", auth, async (req, res) => {
+  try {
+    //Güncelleme Kuralları
+    const { error } = updateSchema.validate(req.body);
+    if (error) {
+      const errorMessages = error.details.map((detail) => detail.message);
+      return res
+        .status(400)
+        .json({ message: "Veri Hatası", errors: errorMessages });
+    }
+
+    const userId = req.user.id; //Token dan kullanıcı id sini al
+    const { name, email } = req.body; //Güncellenecek veriler
+
+    let updateData = {};
+
+    if (name) {
+      updateData.name = name;
+    }
+
+    if (email) {
+      updateData.email = email;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true } //Güncelennmiş halini bana geri döndür
+    ).select("-password -__v"); //Şifre ve __v alanlarını döndürme
+
+    res.json({ message: "Kullanıcı bilgileri güncellendi", user: updatedUser });
+  } catch (error) {
+    console.error("Update Hatası", error);
+
+    //Eğer email benzersizliği ihlali ise özel mesaj gönder
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Bu email zaten kayıtlı" });
+    }
+    res.status(500).json({ message: "Güncelleme sırasında hata oluştu" });
   }
 });
 //Sunucuyu Başlat

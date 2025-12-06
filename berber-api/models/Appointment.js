@@ -10,7 +10,7 @@ const AppointmentSchema = new mongoose.Schema({
   date: String, //Hangi Gün
   time: String, //Saat Kaçta
   services: Array, // Hangi Hizmetler
-  totalPrice: Number, //Kaç Para4
+  totalPrice: Number, //Kaç Para
   userName: {
     //Randevuyu kim aldı
     type: String,
@@ -28,5 +28,11 @@ const AppointmentSchema = new mongoose.Schema({
   },
   status: { type: String, default: "active" },
 });
+
+//Aynı berber, aynı gün, aynı saatte sadece 1 randevu olabilir
+AppointmentSchema.index(
+  { barberId: 1, date: 1, time: 1 },
+  { unique: true, partialFilterExpression: { status: { $ne: "cancelled" } } } //İptal edilmiş randevuları dikkate alma
+);
 
 module.exports = mongoose.model("Appointment", AppointmentSchema);

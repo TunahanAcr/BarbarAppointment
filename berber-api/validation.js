@@ -15,7 +15,7 @@ const registerSchema = Joi.object({
     "any.required": "E-posta alanı zorunludur",
   }),
   password: Joi.string()
-    .pattern(new RegExp("^[a-zA-Z0-9]{3,30}$"))
+    .pattern(new RegExp("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{6,30}$"))
     .required()
     .messages({
       "string.min": "Şifreniz en az 6 karakter olmalıdır.",
@@ -61,7 +61,6 @@ const appointmentSchema = Joi.object({
       Joi.object({
         _id: Joi.string(),
         name: Joi.string().required(),
-        price: Joi.number().min(0).required(), //Fiyat negatif olamaz
         duration: Joi.string(),
       })
     )
@@ -71,7 +70,23 @@ const appointmentSchema = Joi.object({
       "array.min": "Lütfen en az bir hizmet seçin",
       "any.required": "Hizmetler alanı zorunludur",
     }),
-  totalPrice: Joi.number().min(0).required(), //Toplam fiyat negatif olamaz
+});
+const updateSchema = Joi.object({
+  name: Joi.string().min(3).max(50).messages({
+    "string.base": "İsim alanı metin olmalıdır",
+    "string.empty": "İsim alanı boş bırakılamaz",
+    "string.min": "İsim en az 3 karakter olmalıdır",
+    "string.max": "İsim en fazla 50 karakter olabilir",
+  }),
+  email: Joi.string().email().messages({
+    "string.email": "Lütfen geçerli bir e-posta adresi girin",
+    "string.empty": "Lütfen geçerli bir e-posta adresi girin",
+  }),
 });
 
-module.exports = { registerSchema, loginSchema, appointmentSchema };
+module.exports = {
+  registerSchema,
+  loginSchema,
+  appointmentSchema,
+  updateSchema,
+};
