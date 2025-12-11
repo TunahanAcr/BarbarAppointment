@@ -10,6 +10,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../api";
+import MyInput from "../components/MyInput";
+import MyButton from "../components/MyButton";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = React.useState("");
@@ -72,31 +74,23 @@ export default function LoginScreen({ navigation }) {
       <Text style={styles.authTitle}>Giriş Yap</Text>
 
       {/* Email kutusu */}
-      <TextInput
-        style={styles.input}
-        placeholder="E-posta Adresi"
-        placeholderTextColor="#888"
+      <MyInput
+        label="E-posta"
+        placeholder="E-posta"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      ></TextInput>
+      />
 
       {/* Şifre Kutusu */}
-      <TextInput
-        style={styles.input}
-        placeholder="Şifre"
-        placeholderTextColor="#888"
+      <MyInput
+        label="Şifre"
+        placeholder="******"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry={true}
-        autoCapitalize="none"
-      ></TextInput>
+        secure // secure={true} demek
+      />
 
-      {/* Giriş Butonu */}
-      <TouchableOpacity style={styles.authButton} onPress={handleLogin}>
-        <Text style={styles.authButtonText}>Giriş Yap</Text>
-      </TouchableOpacity>
+      <MyButton title="Giriş Yap" onPress={handleLogin} />
 
       {/* Kayıt Ol Linki */}
       <TouchableOpacity
@@ -125,26 +119,5 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
     marginBottom: 40,
-  },
-  input: {
-    backgroundColor: "#1E1E1E",
-    color: "white",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  authButton: {
-    backgroundColor: "#f1c40f",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  authButtonText: {
-    color: "black",
-    fontWeight: "bold",
-    fontSize: 18,
   },
 });

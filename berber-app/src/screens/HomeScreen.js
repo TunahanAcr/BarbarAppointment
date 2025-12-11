@@ -2,34 +2,92 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  TouchableOpacity,
   Image,
   StyleSheet,
   StatusBar,
   Platform,
   ActivityIndicator,
+  FlatList,
+  TextInput,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useAppointmentStore from "../store/useAppointmentStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../api";
 import axios from "axios";
 import color from "../constants/color";
+import BarberCard from "../components/BarberCard";
+
+const SearchBar = ({ searchText, onSearch }) => (
+  <View style={styles.searchContainer}>
+    <Ionicons
+      name="search"
+      size={20}
+      color="#888"
+      style={{ marginRight: 10 }}
+    />
+    <TextInput
+      placeholder="Berver veya hizmet ara"
+      placeholderTextColor="#666"
+      style={styles.searchInput}
+      value={searchText}
+      onChangeText={onSearch}
+
+      // Kullanıcı Yazar(onChangeText)
+      // Child yukarı haber verir(onSearch)
+      // Parent veriyi kaydeder(setSearchText)
+      // Parent yeni veriyi Child'a geri gönderir(value={searchText})
+    />
+
+    {/* Çarpı ikonu Yazı varsa göster, basınca temizle */}
+    {searchText.length > 0 && (
+      <Ionicons
+        name="close-circle"
+        size={20}
+        color="#888"
+        onPress={() => onSearch("")} //Temizle
+      />
+    )}
+  </View>
+);
+
+const CampaignHeader = () => (
+  <View>
+    <Text style={styles.sectionTitle}>Kampanyalar</Text>
+
+    <View style={styles.card}>
+      <Image
+        style={styles.campaignImage}
+        source={{
+          uri: "https://images.unsplash.com/photo-1542992015-4a0b729b1385?q=80&w=1189&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        }}
+      ></Image>
+      <View style={styles.cardInfo}>
+        <Text style={styles.cardTitle}>Yaz Fırsatı</Text>
+        <Text style={styles.cardSubTitle}>
+          Tüm saç kesimlerinde %50 indirim
+        </Text>
+      </View>
+    </View>
+    <Text style={styles.sectionTitle}>Popüler Berberler</Text>
+  </View>
+);
 
 export default function HomeScreen({ navigation, route }) {
-  const [userName, setUserName] = React.useState("Misafir");
-  // Verileri dizide tutcaz
-  const [barbers, setBarbers] = React.useState([]);
+  const [userName, setUserName] = useState("Misafir");
 
-  const [loading, setLoading] = React.useState(true);
+  // Verileri dizide tutcaz
+  const [barbers, setBarbers] = useState([]); //Ekranda görünen liste
+  const [allBarbers, setAllBarbers] = useState([]); // Depo
+  const [searchText, setSearchText] = useState(""); // Arama kutusu
+
+  const [loading, setLoading] = useState(true);
 
   const setStoreBarber = useAppointmentStore((state) => state.setBarber);
 
-  const { clearAppointment } = useAppointmentStore();
-
-  React.useEffect(() => {
-    //Kullanıcı adını hafızadan çeken fonksiyon
+  //Kullanıcı adını hafızadan çeken fonksiyon
+  useEffect(() => {
     const loadUser = async () => {
       try {
         const storedName = await AsyncStorage.getItem("userName");
@@ -53,7 +111,7 @@ export default function HomeScreen({ navigation, route }) {
   }, [navigation]);
 
   //Uygulama açılınca verileri çek
-  React.useEffect(() => {
+  useEffect(() => {
     //İptal kontrolcüsü
     const controller = new AbortController();
 
@@ -65,6 +123,8 @@ export default function HomeScreen({ navigation, route }) {
           signal: controller.signal,
         });
         setBarbers(response.data);
+        setAllBarbers(response.data);
+        console.log(response.data);
       } catch (err) {
         if (axios.isCancel(err)) {
           console.log("İstek iptal edildi");
@@ -83,6 +143,45 @@ export default function HomeScreen({ navigation, route }) {
     };
   }, []);
 
+  const handleSearch = (text) => {
+    setSearchText(text); //Yazılanı state'e kaydet
+
+    // Kutu boşsa
+    if (text === "") {
+      setBarbers(allBarbers);
+      return;
+    }
+
+    const filteredList = allBarbers.filter((barber) => {
+      const query = text.toLowerCase();
+      const barberName = barber.name.toLowerCase();
+
+      if (barberName.includes(query)) return true;
+
+      const serviceMatch = barber.services?.some((service) =>
+        service.name.toLowerCase().includes(query)
+      );
+
+      if (serviceMatch) return true;
+
+      return false;
+    });
+
+    setBarbers(filteredList);
+  };
+
+  const renderBarberItem = ({ item }) => {
+    return (
+      <BarberCard
+        barber={item}
+        onPress={() => {
+          setStoreBarber(item);
+          navigation.navigate("Detail", { barber: item });
+        }}
+      />
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView
@@ -97,8 +196,8 @@ export default function HomeScreen({ navigation, route }) {
     );
   }
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar style="light-content" />
 
       {/* Header Kısmı */}
       {/* Ana kapsayıcı: Satır (row) olarak dizecek ve iki uca yaslayacak */}
@@ -110,63 +209,22 @@ export default function HomeScreen({ navigation, route }) {
           <Text style={styles.subtitle}>Hoş geldin, {userName}</Text>
         </View>
       </View>
+
+      <SearchBar searchText={searchText} onSearch={handleSearch} />
       {/* --- HEADER SONU --- */}
+      {/* Bölüm 1: Kampanyalar */}
 
       {/* İçerik Kısmı */}
-      <ScrollView style={styles.content}>
-        {/* Bölüm 1: Kampanyalar */}
-        <Text style={styles.sectionTitle}>Kampanyalar</Text>
-        {/* Kampanya Kartı */}
-        <View style={styles.card}>
-          {/* Resim yerine şimdilik gri kutu */}
-          <Image
-            style={styles.campaignImage}
-            source={{
-              uri: "https://images.unsplash.com/photo-1542992015-4a0b729b1385?q=80&w=1189&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-            }}
-          ></Image>
-          <View style={styles.cardInfo}>
-            <Text style={styles.cardTitle}>Yaz Fırsatı</Text>
-            <Text style={styles.cardSubTitle}>
-              Tüm saç kesimlerinde %50 indirim
-            </Text>
-          </View>
-        </View>
-        {/* Bölüm 2: Berberler */}
-        <Text style={styles.sectionTitle}>Popüler Berberler</Text>
-        {/* Tıklanabilir Kart (TouchableOpacitiy) */}
-        {/* onPress olunca "Detail" sayfasına gidecek */}
-        {/*Berber Kartı */}
-        {/* Veritabanından dönen listeyi dön */}
-        {barbers.map((berber) => (
-          <TouchableOpacity
-            key={berber._id} //MongoDb den gelen uniqueID
-            style={styles.berberCard}
-            onPress={() => {
-              //Randevu bilgisini temizle
-              clearAppointment();
-              //Zustand ile seçili berberi ayarla
-              setStoreBarber({ _id: berber._id, name: berber.name });
-              navigation.navigate("Detail");
-            }}
-          >
-            {/* Eğer resim varsa göster, yoksa gri box */}
-            {berber.image ? (
-              <Image
-                source={{ uri: berber.image }}
-                style={[styles.berberImage]}
-              ></Image>
-            ) : (
-              <View style={styles.berberImagePlaceHolder}></View>
-            )}
-            <View style={styles.berberInfo}>
-              <Text style={styles.berberName}>{berber.name}</Text>
-              <Text style={styles.berberLocation}>{berber.location}</Text>
-              <Text style={styles.berberRating}>{berber.rating}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <FlatList
+        data={barbers} // Veri Kaynağı
+        renderItem={renderBarberItem} //Her Satırda Ne Basılacak
+        ListHeaderComponent={<CampaignHeader />}
+        ListEmptyComponent={
+          <Text style={styles.sectionTitle}> Hiçbir Berber Bulunamadı</Text>
+        }
+        keyExtractor={(item) => item._id} // Benzersiz Anahtar
+        contentContainerStyle={styles.listContent}
+      />
     </SafeAreaView>
   );
 }
@@ -179,7 +237,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    padddingVertical: 20,
+    padddingVertical: 20, // bir sikim değişmiyor
     marginBottom: 10,
   },
   content: {
@@ -188,21 +246,25 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: color.textPrimary,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    marginTop: 25,
-    marginBottom: 15,
+    marginTop: 10,
+    marginBottom: 10,
   },
   title: {
     color: color.textPrimary,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#888888",
     marginTop: 5,
+  },
+  listContent: {
+    padding: 10,
+    paddingBottom: 25,
   },
 
   //Kampanya Kartı Stilleri
@@ -225,27 +287,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   cardSubTitle: {
-    color: "#aaaaaa",
+    color: "#ccc",
     marginTop: 5,
   },
 
   //Berber Kartı Stilleri
-  berberCard: {
-    flexDirection: "row",
-    backgroundColor: color.cardBg,
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 15,
-    alignItems: "center", //Dikeyde Ortalama
-  },
   campaignImage: {
     width: "100%",
     height: 150,
-  },
-  berberImage: {
-    width: 100,
-    height: "100%",
-    resizeMode: "cover",
   },
   berberImagePlaceHolder: {
     width: 60,
@@ -257,19 +306,19 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     flex: 1,
   },
-  berberName: {
+  //Arama Çubuğu
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E1E1E",
+    padding: 12,
+    borderRadius: 10,
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
     color: "white",
     fontSize: 16,
-    fontWeight: "bold",
-  },
-  berberLocation: {
-    color: "#888888",
-    fontSize: 14,
-    marginTop: 2,
-  },
-  berberRating: {
-    color: "#f1c40f",
-    marginTop: 2,
-    fontWeight: "bold",
   },
 });

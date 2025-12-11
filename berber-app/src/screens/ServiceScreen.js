@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,14 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useAppointmentStore from "../store/useAppointmentStore";
 
 import api from "../../api";
 
-export default function ServiceScreen({ navigation, route }) {
-  //1- Önceki sayfadan gelen veriyi karşılıyoruz
+export default function ServiceScreen({ navigation }) {
+  const cartBarber = useAppointmentStore((state) => state.cartBarber);
+  const clearCart = useAppointmentStore((state) => state.clearCart);
 
   const barber = useAppointmentStore((state) => state.barber);
   const selectedServices = useAppointmentStore((state) => state.services);
@@ -22,11 +24,11 @@ export default function ServiceScreen({ navigation, route }) {
   const toggleService = useAppointmentStore((state) => state.toggleService);
 
   //2-Bu kısımda birden fazla şey seçebileceğilimiz için dizi kullanıyoruz
-  const [services, setServices] = React.useState([]); //Veritabanından gelen bilgiler için
-  const [loading, setLoading] = React.useState(true);
+  const [services, setServices] = useState([]); //Veritabanından gelen bilgiler için
+  const [loading, setLoading] = useState(true);
 
   //3- Sayfa açılınca API den hizmetleri çek
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchServices = async () => {
       try {
         if (!barber) return navigation.goBack(); //Berber seçilmediyse geri dön
@@ -40,6 +42,37 @@ export default function ServiceScreen({ navigation, route }) {
     };
     fetchServices();
   }, [barber]);
+
+  const handleServicePress = (service) => {
+    //Hizmet seçiliyse çıkar
+    const isSelected = selectedServices.some((s) => s._id === service._id);
+    if (isSelected) {
+      toggleService(service, barber);
+      return;
+    }
+
+    //Sepette bir hizmet varsa yeni eklenen hizmet farklı bir berbere aitse uyarı ver
+    if (selectedServices.length > 0 && cartBarber?._id !== barber._id) {
+      Alert.alert(
+        "Farklı Berber!",
+        `Sepetinizde ${cartBarber.name} berberine ait işlemler var. Temizleyip ${barber.name} ile devam edilsin mi?`,
+        [
+          { text: "Vazgeç", style: "cancel" },
+          {
+            text: "Temizle ve Ekle",
+            style: { destructive },
+            onPress: () => {
+              clearCart(); //Önce temizle
+              toggleService(service, barber); //Sonra yenisini ekle
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    toggleService(service, barber); // Her şey yolundaysa direkt ekle
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -71,7 +104,7 @@ export default function ServiceScreen({ navigation, route }) {
             return (
               <TouchableOpacity
                 key={service._id}
-                onPress={() => toggleService(service)} //Fonksiyonu tetikle
+                onPress={() => handleServicePress(service)} //Fonksiyonu tetikle
                 style={[
                   styles.serviceCard,
                   isSelected && styles.selectedServiceCard,

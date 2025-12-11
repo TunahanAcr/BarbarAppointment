@@ -7,6 +7,7 @@ export const useAppointmentStore = create((set, get) => ({
   time: null,
   services: [],
   totalPrice: 0,
+  cartBarber: null,
 
   // Setter Fonksiyonları
 
@@ -16,30 +17,32 @@ export const useAppointmentStore = create((set, get) => ({
 
   setDateTime: (date, time) => set({ date: date, time: time }),
 
-  toggleService: (service) => {
-    const currentServices = get().services; // Mevcut hizmetler
-    const isAlreadySelected = currentServices.find(
-      (s) => s._id === service._id
-    );
+  toggleService: (service, targetBarber) => {
+    const { services, totalPrice, cartBarber } = get();
 
+    const isAlreadySelected = services.find((s) => s._id === service._id);
     const price = Number(service.price);
 
     if (isAlreadySelected) {
+      const newServices = services.filter((s) => s._id !== service._id);
       // Hizmet zaten seçili, kaldır
       set({
-        services: currentServices.filter((s) => s._id !== service._id),
-        totalPrice: get().totalPrice - price,
+        services: newServices,
+        totalPrice: totalPrice - price,
+        cartBarber: newServices.length === 0 ? null : cartBarber,
       });
     } else {
+      const newCartBarber = services.length === 0 ? targetBarber : cartBarber;
       // Hizmet seçili değil, ekle
       set({
-        services: [...currentServices, service],
-        totalPrice: get().totalPrice + price,
+        services: [...services, service],
+        totalPrice: totalPrice + price,
+        cartBarber: newCartBarber,
       });
     }
   },
 
-  //Randevu oluşturulduktan sonra state'leri temizle
+  // Randevu oluşturulduktan sonra state'leri temizle
   clearAppointment: () =>
     set({
       barber: null,
@@ -47,6 +50,15 @@ export const useAppointmentStore = create((set, get) => ({
       time: null,
       services: [],
       totalPrice: 0,
+      cartBarber,
+    }),
+
+  // Sadece sepeti temizlemek için
+  clearCart: () =>
+    set({
+      services: [],
+      totalPrice: 0,
+      cartBarber: null,
     }),
 }));
 

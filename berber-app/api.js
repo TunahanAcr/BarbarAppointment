@@ -12,8 +12,6 @@ api.interceptors.request.use(async (config) => {
   //Her requestin headerına tokenı ekler
   const token = await AsyncStorage.getItem("userToken");
 
-  console.log("Interceptor Çalıştı! Bulunan Token:", token);
-
   if (token) {
     config.headers.Authorization = `Bearer ${token}`; //Bearer Web standardı
   }

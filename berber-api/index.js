@@ -39,7 +39,16 @@ app.get("/", (req, res) => {
 //Berberleri listele
 app.get("/api/barbers", async (req, res) => {
   try {
-    const barbers = await Barber.find();
+    const barbers = await Barber.aggregate([
+      {
+        $lookup: {
+          from: "services", // Hangi koleksiyona bakayım
+          localField: "_id", //Benim elimde olan ortak key
+          foreignField: "barberId", // Onun elindeki ortak key
+          as: "services", // Bulduklarımı hangi isimle kaydedeyim
+        },
+      },
+    ]);
     res.json(barbers);
   } catch (err) {
     res.status(500).json({ message: "Sunucu Hatası" });
@@ -285,6 +294,7 @@ app.put("/api/appointments/cancel/:id", auth, async (req, res) => {
   }
 });
 
+//Kullanıcı Bilgilerini Güncelle
 app.put("/api/users/update", auth, async (req, res) => {
   try {
     //Güncelleme Kuralları

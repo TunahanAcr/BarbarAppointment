@@ -1,5 +1,4 @@
-import React from "react";
-import { StatusBar } from "expo-status-bar";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,31 +6,20 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
-  useState,
-  Image,
-  TextInput,
-  Alert,
-  RefreshControl,
-  ActivityIndicator,
 } from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
 
-export default function DetailScreen({ navigation, route }) {
+export default function DetailScreen({ navigation }) {
   const barber = useAppointmentStore((state) => state.barber);
   const setDateTime = useAppointmentStore((state) => state.setDateTime);
   // Tarih ve Saat Seçimi için State Değişkenleri
-  const [selectedDate, setSelectedDate] = React.useState(null);
-  const [selectedTime, setSelectedTime] = React.useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
 
   //Dolu saatleri tutacak
-  const [bookedTimes, setBookedTimes] = React.useState([]);
+  const [bookedTimes, setBookedTimes] = useState([]);
 
   //Test için sabit tarih ve saatler
   const days = [
@@ -57,7 +45,7 @@ export default function DetailScreen({ navigation, route }) {
     "19:00",
   ];
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedDate) {
       chechkAvailability();
     }

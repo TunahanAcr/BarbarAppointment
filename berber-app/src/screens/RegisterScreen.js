@@ -4,11 +4,12 @@ import {
   Platform,
   Text,
   TouchableOpacity,
-  TextInput,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../api";
+import MyInput from "../components/MyInput";
+import MyButton from "../components/MyButton";
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = React.useState();
@@ -61,36 +62,16 @@ export default function RegisterScreen({ navigation }) {
     >
       <Text style={styles.authTitle}>Kayıt Ol</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Ad Soyad"
-        placeholderTextColor="#888"
-        value={name}
-        onChangeText={setName}
-      ></TextInput>
-
-      <TextInput
-        style={styles.input}
-        placeholder="E-posta"
-        placeholderTextColor="#888"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      ></TextInput>
-
-      <TextInput
-        style={styles.input}
+      <MyInput placeholder="İsim" value={name} onChangeText={setName} />
+      <MyInput placeholder="E-posta" value={email} onChangeText={setEmail} />
+      <MyInput
         placeholder="Şifre"
-        placeholderTextColor="#888"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry={true}
-      ></TextInput>
+        secure
+      />
 
-      <TouchableOpacity style={styles.authButton} onPress={handleRegister}>
-        <Text style={styles.authButtonText}>Kayıt Ol</Text>
-      </TouchableOpacity>
+      <MyButton title="Kayıt Ol" onPress={handleRegister}></MyButton>
 
       <TouchableOpacity
         style={{ marginTop: 20 }}
@@ -120,26 +101,5 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
     marginBottom: 40,
-  },
-  input: {
-    backgroundColor: "#1E1E1E",
-    color: "white",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#333",
-  },
-  authButton: {
-    backgroundColor: "#f1c40f",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  authButtonText: {
-    color: "black",
-    fontWeight: "bold",
-    fontSize: 18,
   },
 });

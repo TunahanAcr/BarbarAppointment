@@ -11,9 +11,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
 
-export default function SummaryScreen({ route, navigation }) {
+export default function SummaryScreen({ navigation }) {
   //Üstten gelen veriyi karşılıyoruz
-  const { barber, date, time, services, totalPrice } = useAppointmentStore();
+  const { barber, date, time, services, totalPrice, clearAppointment } =
+    useAppointmentStore();
 
   //Randevuyu Kaydetme Fonskiyonu
   const handleConfirm = async () => {
@@ -43,17 +44,19 @@ export default function SummaryScreen({ route, navigation }) {
       //3- Sonucu Kontrol Et
       if (response.status === 200 || response.status === 201) {
         //Gelen hhtp kodu 200-299 arasında mı diye bakar
-        alert("Randevunuz Başarıyla Alındı");
-        navigation.navigate("Main");
+        Alert.alert("Randevunuz Başarıyla Alındı");
+        clearAppointment(); // Randevu alınca stateleri sıfırla
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       }
     } catch (err) {
-      if (err.response && err.response.status === 400) {
-        const errorMessages = err.response.data.errors;
-
-        Alert.alert("Hata", errorMessages.join("\n"));
-      } else {
-        Alert.alert("Hata", "Sunucuya bağlanılamadı");
-      }
+      // 4. Hata Yönetimi (Dizi/String fark etmez, patlamaz)
+      console.log("HATA DETAYI:", err);
+      // Gelen hatayı ne olursa olsun string'e çevirir
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors ||
+        "Hata oluştu";
+      Alert.alert("Hata", String(msg));
     }
   };
   return (
@@ -70,7 +73,7 @@ export default function SummaryScreen({ route, navigation }) {
         {/* İşletme bilgisi */}
         <Text style={styles.sectionTitle}>İşletme</Text>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>{barber.name}</Text>
+          <Text style={styles.summaryTitle}>{barber?.name}</Text>
           <Text style={{ color: "#888" }}>Aydın, Efeler</Text>
         </View>
 
