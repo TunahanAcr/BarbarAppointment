@@ -33,11 +33,10 @@ export default function DetailScreen({ navigation }) {
     //Saatleri alır
     const generatedTimes = getTimes(8, 20, 30); //9-20 arası 30 dakikalık
     setTimes(generatedTimes);
-    console.log(generatedTimes);
   }, []); //Sadece bir kez çalışır
 
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate !== null) {
       chechkAvailability();
     }
   }, [selectedDate]); //SelectedDate değiştikçe
@@ -51,10 +50,14 @@ export default function DetailScreen({ navigation }) {
 
       const formattedDate = `${selectedDateObject.day} ${selectedDateObject.name}`;
 
+      console.log("📡 Backend'e sorulan tarih:", formattedDate); // Giden veriyi gör
+
       const response = await api.post("/appointments/availability", {
         barberId: barber._id,
         date: formattedDate,
       });
+
+      console.log("📩 Backend'den gelen dolu saatler:", response.data); // GELEN CEVABI GÖR!
 
       setBookedTimes(response.data);
     } catch (err) {
@@ -91,7 +94,7 @@ export default function DetailScreen({ navigation }) {
                   selectedDate === day.id && styles.selectedText,
                 ]}
               >
-                {day.dayNumber}
+                {day.day}
               </Text>
               <Text
                 style={[
@@ -99,7 +102,7 @@ export default function DetailScreen({ navigation }) {
                   selectedDate === day.id && styles.selectedText,
                 ]}
               >
-                {day.dayName}
+                {day.name}
               </Text>
             </TouchableOpacity>
           ))}
@@ -156,10 +159,14 @@ export default function DetailScreen({ navigation }) {
             //1- ID si seçili olan gün objesini buluyoruz
             const selectedDayObject = days.find((d) => d.id === selectedDate);
             //2- Tarih metni oluşturuyoruz
-            const formattedDate = `${selectedDayObject.dayNumber} ${selectedDayObject.dayName}`;
+            const formattedDate = `${selectedDayObject.day} ${selectedDayObject.name}`;
 
             //3- Zustand a tarih ve saati setliyoruz
-            setDateTime(formattedDate, selectedTime);
+            setDateTime(
+              formattedDate,
+              selectedTime,
+              selectedDayObject.fullDate
+            );
 
             navigation.navigate("Service");
           }}

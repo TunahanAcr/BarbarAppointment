@@ -70,6 +70,7 @@ const appointmentSchema = Joi.object({
       "array.min": "Lütfen en az bir hizmet seçin",
       "any.required": "Hizmetler alanı zorunludur",
     }),
+  fullDate: Joi.string().required(),
 });
 const updateSchema = Joi.object({
   name: Joi.string().min(3).max(50).messages({

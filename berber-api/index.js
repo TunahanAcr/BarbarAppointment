@@ -83,7 +83,7 @@ app.post("/api/appointments", auth, async (req, res) => {
         .json({ message: "Veri Hatası", errors: errorMessages });
     }
 
-    const { barberId, barberName, date, time, services } = req.body;
+    const { barberId, barberName, date, time, services, fullDate } = req.body;
 
     //Aynı berber, aynı gün, aynı saatte randevu var mı kontrol et
     const existingAppointment = await Appointment.findOne({
@@ -118,6 +118,7 @@ app.post("/api/appointments", auth, async (req, res) => {
       time,
       services,
       totalPrice,
+      fullDate,
     }); // requestin body sinde appointmentData var onu Appointment schemamıza koyuyoruz
 
     //DB ye kaydet

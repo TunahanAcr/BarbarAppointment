@@ -8,6 +8,7 @@ export const useAppointmentStore = create((set, get) => ({
   services: [],
   totalPrice: 0,
   cartBarber: null,
+  fullDate: null,
 
   // Setter Fonksiyonları
 
@@ -15,7 +16,8 @@ export const useAppointmentStore = create((set, get) => ({
   //setBarber: (gelenVeri) => set({ barber: gelenVeri }) şeklinde
   setBarber: (barber) => set({ barber: barber }),
 
-  setDateTime: (date, time) => set({ date: date, time: time }),
+  setDateTime: (date, time, fullDate) =>
+    set({ date: date, time: time, fullDate: fullDate }),
 
   toggleService: (service, targetBarber) => {
     const { services, totalPrice, cartBarber } = get();
@@ -51,6 +53,7 @@ export const useAppointmentStore = create((set, get) => ({
       services: [],
       totalPrice: 0,
       cartBarber: null,
+      fullDate: null,
     }),
 
   // Sadece sepeti temizlemek için

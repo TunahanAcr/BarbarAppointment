@@ -10,8 +10,8 @@ const getNextDays = (numberOfDays = 7) => {
     nextDay.setDate(today.getDate() + i); // Tarihi gün ekleyerek ilerlet
     days.push({
       id: i,
-      dayNumber: nextDay.getDate(), // Ayın günü
-      dayName: nextDay.toLocaleDateString("tr-TR", { weekday: "short" }), // Gün adı (kısa)
+      day: nextDay.getDate(), // Ayın günü
+      name: nextDay.toLocaleDateString("tr-TR", { weekday: "short" }), // Gün adı (kısa)
       fullDate: nextDay.toISOString().split("T")[0], // YYYY-MM-DD formatında tam tarih
       month: nextDay.toLocaleDateString("tr-TR", { month: "long" }), // Ay adı
     });

@@ -12,9 +12,16 @@ import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
 
 export default function SummaryScreen({ navigation }) {
-  //Üstten gelen veriyi karşılıyoruz
-  const { barber, date, time, services, totalPrice, clearAppointment } =
-    useAppointmentStore();
+  // Zustanddan gelen veriyi karşılıyoruz
+  const {
+    barber,
+    date,
+    time,
+    services,
+    totalPrice,
+    clearAppointment,
+    fullDate,
+  } = useAppointmentStore();
 
   //Randevuyu Kaydetme Fonskiyonu
   const handleConfirm = async () => {
@@ -33,6 +40,7 @@ export default function SummaryScreen({ navigation }) {
         date: date, //Zustand dan alınıyor
         time: time, //Zustand dan alınıyor
         services: cleanServices,
+        fullDate: fullDate, //Zustand dan alınıyor
       };
 
       console.log("Gönderilen Randevu Verisi:", appointmentData);

@@ -9,6 +9,7 @@ const AppointmentSchema = new mongoose.Schema({
   barberName: String, //Hangi Berber
   date: String, //Hangi Gün
   time: String, //Saat Kaçta
+  fullDate: String, //Tam Tarih Bilgisi
   services: Array, // Hangi Hizmetler
   totalPrice: Number, //Kaç Para
   userName: {
