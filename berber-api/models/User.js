@@ -1,3 +1,4 @@
+const { ref } = require("joi");
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
@@ -17,6 +18,10 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  favorites: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "Barber",
   },
 });
 

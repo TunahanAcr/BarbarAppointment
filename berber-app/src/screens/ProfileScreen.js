@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../api";
+import useAppointmentStore from "../store/useAppointmentStore";
 
 export default function ProfileScreen({ navigation }) {
   const [name, setName] = React.useState("");
@@ -61,6 +62,7 @@ export default function ProfileScreen({ navigation }) {
   const handleLogout = async () => {
     try {
       await AsyncStorage.clear();
+      useAppointmentStore.getState().clearAppointment(); // Çıkışta randevu bilgisini temizle
       navigation.replace("Login");
     } catch (err) {
       console.log("Silme Hatası", err);

@@ -1,0 +1,17 @@
+config:
+  target: "http://localhost:5000" # Senin sunucu adresin (Canlı ise IP adresi)
+  phases:
+    - duration: 30
+      arrivalRate: 20 # Önce saniyede 20 istek
+    - duration: 30
+      arrivalRate: 50 # Sonra saniyede 50 istek (Zorlamaya başla)
+    - duration: 30
+      arrivalRate: 100 # Saniyede 100 istek (Burada response time artabilir!)
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - flow:
+      - get:
+          url: "/api/barbers" # 1. Berberleri listele
