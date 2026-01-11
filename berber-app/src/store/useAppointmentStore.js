@@ -50,7 +50,7 @@ export const useAppointmentStore = create((set, get) => ({
       time: null,
       services: [],
       totalPrice: 0,
-      cartBarber,
+      cartBarber: null,
     }),
 
   // Sadece sepeti temizlemek için

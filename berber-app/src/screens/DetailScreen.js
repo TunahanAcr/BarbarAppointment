@@ -10,46 +10,38 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
+import getNextDays from "../utils/date";
+import getTimes from "../utils/time";
 
 export default function DetailScreen({ navigation }) {
   const barber = useAppointmentStore((state) => state.barber);
   const setDateTime = useAppointmentStore((state) => state.setDateTime);
   // Tarih ve Saat Seçimi için State Değişkenleri
+  const [days, setDays] = useState([]);
+  const [times, setTimes] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
   //Dolu saatleri tutacak
   const [bookedTimes, setBookedTimes] = useState([]);
 
-  //Test için sabit tarih ve saatler
-  const days = [
-    { id: 1, name: "Pzt", day: "24" },
-    { id: 2, name: "Sal", day: "25" },
-    { id: 3, name: "Çar", day: "26" },
-    { id: 4, name: "Per", day: "27" },
-    { id: 5, name: "Cum", day: "28" },
-    { id: 6, name: "Cmt", day: "29" },
-  ];
+  useEffect(() => {
+    //Gelecek 14 günü alır
+    const upcomingDays = getNextDays(14);
+    setDays(upcomingDays);
 
-  const times = [
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "18:00",
-    "19:00",
-  ];
+    //Saatleri alır
+    const generatedTimes = getTimes(8, 20, 30); //9-20 arası 30 dakikalık
+    setTimes(generatedTimes);
+    console.log(generatedTimes);
+  }, []); //Sadece bir kez çalışır
 
   useEffect(() => {
     if (selectedDate) {
       chechkAvailability();
     }
   }, [selectedDate]); //SelectedDate değiştikçe
+
   const chechkAvailability = async () => {
     try {
       const selectedDateObject = days.find((d) => d.id === selectedDate);
@@ -69,6 +61,7 @@ export default function DetailScreen({ navigation }) {
       console.error("Müsaitlik Hatası", err);
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Üst başlık ve geri butonu */}
@@ -98,7 +91,7 @@ export default function DetailScreen({ navigation }) {
                   selectedDate === day.id && styles.selectedText,
                 ]}
               >
-                {day.day}
+                {day.dayNumber}
               </Text>
               <Text
                 style={[
@@ -106,7 +99,7 @@ export default function DetailScreen({ navigation }) {
                   selectedDate === day.id && styles.selectedText,
                 ]}
               >
-                {day.name}
+                {day.dayName}
               </Text>
             </TouchableOpacity>
           ))}
@@ -154,14 +147,16 @@ export default function DetailScreen({ navigation }) {
         <TouchableOpacity
           style={[
             styles.button,
-            (!selectedDate || !selectedTime) && styles.disabledButton,
+            // 0 indexi gelince patlamasın diye null kontrolü
+            (selectedDate === null || !selectedTime) && styles.disabledButton,
           ]}
-          disabled={!selectedDate || !selectedTime}
+          // 0 indexi gelince patlamasın diye null kontrolü
+          disabled={selectedDate === null || !selectedTime}
           onPress={() => {
             //1- ID si seçili olan gün objesini buluyoruz
             const selectedDayObject = days.find((d) => d.id === selectedDate);
             //2- Tarih metni oluşturuyoruz
-            const formattedDate = `${selectedDayObject.day} ${selectedDayObject.name}`;
+            const formattedDate = `${selectedDayObject.dayNumber} ${selectedDayObject.dayName}`;
 
             //3- Zustand a tarih ve saati setliyoruz
             setDateTime(formattedDate, selectedTime);
@@ -184,12 +179,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    padddingVertical: 20,
+    paddingVertical: 0,
     marginBottom: 10,
   },
   content: {
     flex: 1,
-    paddingHorizantal: 20,
   },
   sectionTitle: {
     color: "#ffffff",

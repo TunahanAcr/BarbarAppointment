@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //Base URL
 const api = axios.create({
-  baseURL: "http://192.168.115.111:5000/api",
+  baseURL: "http://192.168.104.111:5000/api",
 });
 
 //Her istekten önce Token'ı otomaik ekleyeyen "Interceptor"

@@ -60,7 +60,7 @@ export default function ServiceScreen({ navigation }) {
           { text: "Vazgeç", style: "cancel" },
           {
             text: "Temizle ve Ekle",
-            style: { destructive },
+            style: "destructive",
             onPress: () => {
               clearCart(); //Önce temizle
               toggleService(service, barber); //Sonra yenisini ekle

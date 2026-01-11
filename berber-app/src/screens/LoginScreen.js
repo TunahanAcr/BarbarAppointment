@@ -1,21 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
   Platform,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
   Alert,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../api";
 import MyInput from "../components/MyInput";
 import MyButton from "../components/MyButton";
+import { jwtDecode } from "jwt-decode";
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   //OTO-LOGİN CHECK
   React.useEffect(() => {
@@ -26,10 +31,29 @@ export default function LoginScreen({ navigation }) {
 
         //Local Storage da token mevcutsa içeri al
         if (token) {
-          navigation.replace("Main", { userName: userName });
+          const decodedToken = jwtDecode(token);
+
+          //decodedToken.exp The finish time of the token in ms form
+          //Date.now() is ms form so we divede with 1000
+          const currentTime = Date.now() / 1000;
+
+          if (decodedToken.exp < currentTime) {
+            //The time is over
+            console.log("Exiting");
+            await AsyncStorage.removeItem("userToken");
+            await AsyncStorage.removeItem("userName");
+            await AsyncStorage.removeItem("userEmail");
+
+            setCheckingAuth(false);
+          } else {
+            navigation.replace("Main", { userName: userName });
+          }
+        } else {
+          setCheckingAuth(false);
         }
       } catch (err) {
         console.log("Token bulunamadı");
+        setCheckingAuth(false);
       }
     };
     checkLogin();
@@ -47,7 +71,7 @@ export default function LoginScreen({ navigation }) {
 
         console.log("Giriş başarılı", response.data);
 
-        navigation.navigate("Main", { userName: response.data.user.name });
+        navigation.replace("Main", { userName: response.data.user.name });
       } else {
         Alert.alert("Hata", response.data.message);
       }
@@ -67,6 +91,21 @@ export default function LoginScreen({ navigation }) {
       }
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#121212",
+        }}
+      >
+        <ActivityIndicator size="large" color="#f1c40f" />
+      </View>
+    );
+  }
   return (
     <SafeAreaView
       style={[styles.container, { justifyContent: "center", padding: 20 }]}

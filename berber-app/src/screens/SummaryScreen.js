@@ -44,9 +44,16 @@ export default function SummaryScreen({ navigation }) {
       //3- Sonucu Kontrol Et
       if (response.status === 200 || response.status === 201) {
         //Gelen hhtp kodu 200-299 arasında mı diye bakar
-        Alert.alert("Randevunuz Başarıyla Alındı");
-        clearAppointment(); // Randevu alınca stateleri sıfırla
-        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+        Alert.alert("Başarılı! 🎉", "Randevunuz oluşturuldu.", [
+          {
+            text: "Tamam",
+            onPress: () => {
+              navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+              clearAppointment();
+            },
+          },
+        ]);
+        navigation.replace("Main");
       }
     } catch (err) {
       // 4. Hata Yönetimi (Dizi/String fark etmez, patlamaz)
