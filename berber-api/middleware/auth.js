@@ -24,6 +24,9 @@ function auth(req, res, next) {
 
   try {
     //Token geçerli mi? Onada bakalım
+    //Signature kontrolü
+    //Secret key ile imzalanmış mı?
+    //Expiration kontrolü
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     console.log("✅ Token Geçerli. Kullanıcı:", decoded);

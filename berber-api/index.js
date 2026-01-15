@@ -250,7 +250,7 @@ app.post("/api/auth/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email }, //Biletin içine ne yazayım
       process.env.JWT_SECRET, //Gizli Mühür
-      { expiresIn: "1d" } //Token 1 gün geçerli
+      { expiresIn: "100d" } //Token 100 gün geçerli
     );
 
     res.json({
@@ -353,18 +353,16 @@ app.post("/api/users/toggle-favorite", auth, async (req, res) => {
     //Favorilerde var mı kontrol et
     //User.favorites içinde barberId var mı diye bak toString ile ObjectId yi stringe çeviriyoruz
 
-    const isFavorite = user.favorites.some(
-      (favId) => favId.toString() !== barberId
-    );
+    const favoriteStrings = user.favorites.flatMap((favId) => favId.toString());
 
-    if (isFavorite) {
+    if (favoriteStrings.includes(barberId)) {
       //Eğer favori ise kaldır
       user.favorites = user.favorites.filter(
         (favId) => favId.toString() !== barberId
       );
     } else {
       //Eğer favori değilse ekle
-      user.favorites.push(barberId);
+      user.favorites.push(barberId); //Mongoose string i otomatik ObjectId ye çevirir
     }
 
     await user.save();

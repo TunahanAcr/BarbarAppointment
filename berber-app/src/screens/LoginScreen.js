@@ -36,6 +36,8 @@ export default function LoginScreen({ navigation }) {
           //decodedToken.exp The finish time of the token in ms form
           //Date.now() is ms form so we divede with 1000
           const currentTime = Date.now() / 1000;
+          console.log("Token Expiration Time:", decodedToken.exp);
+          console.log("Current Time:", currentTime);
 
           if (decodedToken.exp < currentTime) {
             //The time is over
