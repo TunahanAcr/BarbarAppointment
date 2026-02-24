@@ -32,10 +32,6 @@ mongoose
   .then(() => console.log("Veritabanına bağlandı"))
   .catch((err) => console.log("Bağlantı HATASI", err));
 
-app.get("/", (req, res) => {
-  res.send("Berber API çalışıyor");
-});
-
 //Berberleri listele
 app.get("/api/barbers", async (req, res) => {
   try {

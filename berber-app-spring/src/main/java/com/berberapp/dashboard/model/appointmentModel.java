@@ -26,11 +26,30 @@ public record appointmentModel(
     // Compact Constructor: Default değer atamak için kullanılır
     public appointmentModel {
         if (status == null) {
-            status = "active";
+            status = "pending";
         }
+
         if (createdAt == null) {
             createdAt = Instant.now();
         }
     }
 
+    // Bu metot, mevcut randevunun birebir aynısını alıp,
+    // sadece status kısmına yeni değeri koyarak yepyeni bir kopya (record) üretir.
+    public appointmentModel withStatus(String newStatus) {
+        return new appointmentModel(
+                this.id(),
+                this.barberId(),
+                this.barberName(),
+                this.date(),
+                this.time(),
+                this.fullDate(),
+                this.services(),
+                this.totalPrice(),
+                this.userName(),
+                this.userId(),
+                this.createdAt(),
+                newStatus // Sadece burası değişiyor!
+        );
+    }
 }

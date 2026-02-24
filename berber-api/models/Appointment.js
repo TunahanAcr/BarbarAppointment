@@ -27,13 +27,13 @@ const AppointmentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  status: { type: String, default: "active" },
+  status: { type: String, default: "pending" },
 });
 
 //Aynı berber, aynı gün, aynı saatte sadece 1 randevu olabilir
 AppointmentSchema.index(
   { barberId: 1, date: 1, time: 1 },
-  { unique: true, partialFilterExpression: { status: { $ne: "cancelled" } } } //İptal edilmiş randevuları dikkate alma
+  { unique: true, partialFilterExpression: { status: { $ne: "cancelled" } } }, //İptal edilmiş randevuları dikkate alma
 );
 
 module.exports = mongoose.model("Appointment", AppointmentSchema);
