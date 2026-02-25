@@ -10,4 +10,6 @@ public interface appointmentRepository extends MongoRepository<appointmentModel,
 
     List<appointmentModel> findByBarberId(ObjectId barberId);
     List<appointmentModel> findByBarberIdAndStatus(ObjectId barberId, String status);
+    List<appointmentModel> findByBarberIdAndStatusAndFullDate(ObjectId barberId, String status, String fullDate);
+    List<appointmentModel> findByBarberIdAndFullDate(ObjectId barberId,String fullDate);
 }

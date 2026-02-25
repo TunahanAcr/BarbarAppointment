@@ -4,7 +4,6 @@ import com.berberapp.dashboard.model.appointmentModel;
 import com.berberapp.dashboard.repository.appointmentRepository;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -34,4 +33,21 @@ public class appointmentService { // Burda class tanımladık çünkü kendi bus
 
         return repository.save(newAppointment);
     }
- }
+
+    // Günlük geliri hesaplamak için appointmentların priceını dön
+    public int getAllPrice(String barberId, String status, String fullDate) {
+        List<appointmentModel> appointments = repository.findByBarberIdAndStatusAndFullDate(new ObjectId(barberId), status, fullDate);
+
+        int totalAmount = 0;
+
+        for (appointmentModel appointmentList : appointments) {
+            totalAmount = totalAmount + appointmentList.totalPrice();
+        }
+
+        return totalAmount;
+    }
+
+    public List<appointmentModel> getDailyAppointments(ObjectId barberId, String fullDate) {
+        return repository.findByBarberIdAndFullDate(barberId, fullDate);
+    }
+}
