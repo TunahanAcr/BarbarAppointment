@@ -56,7 +56,7 @@ export default function AppointmentScreen({ navigation }) {
       setAppointmets(response.data);
       console.log(
         "🔍 GELEN RANDEVU VERİSİ:",
-        JSON.stringify(response.data, null, 2)
+        JSON.stringify(response.data, null, 2),
       );
     } catch (err) {
       console.error("Randevular Çekilemedi", err);
@@ -79,7 +79,7 @@ export default function AppointmentScreen({ navigation }) {
             style: "destructive",
             onPress: async () => {
               const response = await api.put(
-                `/appointments/cancel/${appointmentId}`
+                `/appointments/cancel/${appointmentId}`,
               );
               if (response.status === 200 || response.status === 201) {
                 alert("Randevu iptal edildi");
@@ -89,7 +89,7 @@ export default function AppointmentScreen({ navigation }) {
               }
             },
           },
-        ]
+        ],
       );
     } catch (error) {
       console.error(error);

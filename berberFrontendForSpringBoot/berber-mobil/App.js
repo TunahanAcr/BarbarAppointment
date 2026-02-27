@@ -1,3 +1,5 @@
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import {
   FlatList,
@@ -5,107 +7,35 @@ import {
   Text,
   View,
   TouchableOpacity,
+  RefreshControl,
+  SafeAreaView,
+  Platform,
 } from "react-native";
 import api from "./src/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { berberId } from "./src/configId";
 
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
 export default function App() {
-  const [appointments, setAppointments] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Kullanıcı içeride mi?
+  const [checkingAuth, setCheckingAuth] = useState(true); // Şu an kapıda biletini mi kontrol ediyoruz?  const [appointments, setAppointments] = useState([]);
+  <Stack.Navigator initialRouteName="Login">
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Signup" component={SignupScreen} />
+    <Stack.Screen name="Main" component={HomePage} />
+  </Stack.Navigator>;
+  const [netDailyRevenue, setNetDailyRevenue] = useState(0);
+  const [pendingDailyRevenue, setPendingDailyRevenue] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const getDailyAppointments = async () => {
-      try {
-        const response = await api.get(
-          `/barber/${berberId}/daily?fullDate=${new Date().toISOString().split("T")[0]}`,
-        );
-        setAppointments([...response.data]);
-        console.log("Onaylamadan önceki randevular:", appointments);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    getDailyAppointments();
-  }, []);
-
-  const handleAccept = async (id) => {
-    try {
-      console.log(`Randevu ${id} onaylandı!`);
-
-      const response = await api.patch(`/${id}`, {
-        status: "approved",
-      });
-
-      if (response.status === 200) {
-        setAppointments((prev) =>
-          prev.map((appt) => (appt.id === id ? response.data : appt)),
-        );
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const handleCancel = (id) => {
-    console.log(`Randevu ${id} iptal edildi!`);
-    api
-      .patch(`/${id}`, {
-        status: "cancelled",
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          setAppointments((prev) =>
-            prev.map((appt) => (appt.id === id ? response.data : appt)),
-          );
-        }
-      });
-  };
-  console.log("Randevular:", appointments);
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerTitle}>Randevular</Text>
-      <FlatList
-        data={appointments}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            {/* Üst Kat: Bilgiler ve Fiyat */}
-            <View style={styles.cardHeader}>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.userName}</Text>
-                <Text style={styles.timeText}>⏰ {item.time}</Text>
-              </View>
-              <Text style={styles.priceText}>{item.totalPrice} ₺</Text>
-            </View>
-
-            {/* Alt Kat: Butonlar veya Durum Yazısı */}
-            <View style={styles.buttonContainer}>
-              {item.status === "pending" ? (
-                <>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => handleCancel(item.id)}
-                  >
-                    <Text style={styles.cancelButtonText}>İptal Et</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.acceptButton}
-                    onPress={() => handleAccept(item.id)}
-                  >
-                    <Text style={styles.buttonText}>Onayla</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text style={styles.statusText}>
-                  {item.status === "approved" && "✅ Onaylandı"}
-                  {item.status === "cancelled" && "❌ İptal Edildi"}
-                </Text>
-              )}
-            </View>
-          </View>
-        )}
-      />
-    </View>
+    <Stack.Navigator initialRouteName="Login">
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Signup" component={SignupScreen} />
+      <Stack.Screen name="Main" component={HomePage} />
+    </Stack.Navigator>
   );
 }
 
@@ -115,6 +45,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
     paddingTop: 50,
     paddingHorizontal: 20,
+  },
+  header: {
+    marginBottom: 20,
+  },
+  revenueContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  revenueBox: {
+    backgroundColor: "#FFFFFF",
+    padding: 15,
+    borderRadius: 10,
+    width: "48%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  revenueLabel: {
+    fontSize: 14,
+    color: "#7F8C8D",
+    marginBottom: 5,
+  },
+  revenueValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#27AE60",
   },
   headerTitle: {
     fontSize: 28,
