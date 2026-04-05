@@ -39,7 +39,7 @@ export default function SignupScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-      <TouchableOpacity style={styles.button} onPress={() => {}}>
+      <TouchableOpacity style={styles.button} onPress={handleSignup}>
         <Text style={styles.buttonText}>Kayıt Ol</Text>
       </TouchableOpacity>
     </SafeAreaView>

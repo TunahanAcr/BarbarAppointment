@@ -83,7 +83,7 @@ export default function LoginScreen({ navigation }) {
         console.log("Sunucu Hatası:", error.response.data);
         Alert.alert(
           "Giriş Yapılamadı",
-          error.response.data.message || "Bilgilerinizi kontrol edin."
+          error.response.data.message || "Bilgilerinizi kontrol edin.",
         );
       } else if (error.request) {
         // Sunucuya hiç ulaşılamadı (İnternet/IP sorunu)

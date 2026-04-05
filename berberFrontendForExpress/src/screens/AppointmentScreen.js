@@ -141,7 +141,7 @@ export default function AppointmentScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("Main")}>
+        <TouchableOpacity onPress={() => navigation.navigate("HomeTab")}>
           <Text style={{ color: "white", fontSize: 18 }}>← Ana Sayfa</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Randevularım</Text>

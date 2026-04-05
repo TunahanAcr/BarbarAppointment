@@ -8,17 +8,14 @@ import {
   View,
   TouchableOpacity,
   RefreshControl,
-  SafeAreaView,
   Platform,
 } from "react-native";
-import api from "./src/api";
+import { SafeAreaView } from "react-native-safe-area-context";
+import api from "../api";
 import { useEffect, useState, useCallback } from "react";
-import { berberId } from "./src/configId";
+import { berberId } from "../configId";
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Kullanıcı içeride mi?
-  const [checkingAuth, setCheckingAuth] = useState(true); // Şu an kapıda biletini mi kontrol ediyoruz?
-
   const [appointments, setAppointments] = useState([]);
   const [netDailyRevenue, setNetDailyRevenue] = useState(0);
   const [pendingDailyRevenue, setPendingDailyRevenue] = useState(0);
@@ -32,7 +29,6 @@ export default function App() {
   const fetchDashboardData = async () => {
     try {
       const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD" formatında bugünün tarihi
-
       // Randevuları ve günlük geliri aynı anda çekmek için Promise.all kullanıyoruz
       const [appointmentsResponse, netRevenueResponse, pendingRevenueResponse] =
         await Promise.all([

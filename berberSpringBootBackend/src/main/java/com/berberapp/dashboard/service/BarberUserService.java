@@ -18,9 +18,14 @@ public class BarberUserService {
     public Optional<BarberUserModel> isEmailExist(String email) {
         return repository.findByEmail(email);
         }
+
     public BarberUserModel saveNewUser(String name, String email, String password) {
         BarberUserModel newUser = new BarberUserModel(null ,name, email, password, java.time.Instant.now());
         return repository.save(newUser);
+    }
+
+    public Optional<BarberUserModel> findUser(String email) {
+        return repository.findByEmail(email);
     }
     }
 
