@@ -59,10 +59,10 @@ const appointmentSchema = Joi.object({
   services: Joi.array()
     .items(
       Joi.object({
-        _id: Joi.string(),
+        id: Joi.string(),
         name: Joi.string().required(),
         duration: Joi.string(),
-      })
+      }),
     )
     .min(1)
     .required()

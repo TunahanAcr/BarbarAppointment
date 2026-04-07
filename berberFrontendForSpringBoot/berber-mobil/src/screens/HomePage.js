@@ -30,13 +30,18 @@ export default function App() {
     try {
       const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD" formatında bugünün tarihi
       // Randevuları ve günlük geliri aynı anda çekmek için Promise.all kullanıyoruz
+      console.log(today);
       const [appointmentsResponse, netRevenueResponse, pendingRevenueResponse] =
         await Promise.all([
-          api.get(`/barber/${berberId}/daily?fullDate=${today}`),
           api.get(
-            `/barber/${berberId}/price?status=approved&fullDate=${today}`,
+            `/dashboard/appointments/barber/${berberId}/daily?fullDate=${today}`,
           ),
-          api.get(`/barber/${berberId}/price?status=pending&fullDate=${today}`),
+          api.get(
+            `/dashboard/appointments/barber/${berberId}/price?status=approved&fullDate=${today}`,
+          ),
+          api.get(
+            `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${today}`,
+          ),
         ]);
 
       setAppointments(appointmentsResponse.data);
@@ -62,7 +67,7 @@ export default function App() {
     try {
       console.log(`Randevu ${id} onaylandı!`);
 
-      const response = await api.patch(`/${id}`, {
+      const response = await api.patch(`/dashboard/appointments/${id}`, {
         status: "approved",
       });
 
@@ -82,7 +87,7 @@ export default function App() {
     try {
       console.log(`Randevu ${id} iptal edildi!`);
 
-      const response = await api.patch(`/${id}`, {
+      const response = await api.patch(`/dashboard/appointments/${id}`, {
         status: "cancelled",
       });
 
@@ -113,7 +118,7 @@ export default function App() {
           </View>
         </View>
       </View>
-      <Text style={styles.headerTitle}>Randevular</Text>
+      <Text style={styles.headerTitle}>Bugünkü Randevular</Text>
       <FlatList
         refreshControl={
           <RefreshControl

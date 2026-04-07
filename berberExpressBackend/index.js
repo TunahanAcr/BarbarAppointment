@@ -102,7 +102,7 @@ app.post("/api/appointments", auth, async (req, res) => {
 
     const totalPrice = servicesFromDb.reduce(
       (sum, service) => sum + service.price,
-      0
+      0,
     );
 
     const yeniRandevu = new Appointment({
@@ -246,7 +246,7 @@ app.post("/api/auth/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, name: user.name, email: user.email }, //Biletin içine ne yazayım
       process.env.JWT_SECRET, //Gizli Mühür
-      { expiresIn: "100d" } //Token 100 gün geçerli
+      { expiresIn: "100d" }, //Token 100 gün geçerli
     );
 
     res.json({
@@ -277,7 +277,7 @@ app.put("/api/appointments/cancel/:id", auth, async (req, res) => {
         //Burada veriyi silmiyoruz sadece "status" diye bir alan uydurup güncelliyoruz
         status: "cancelled",
       },
-      { new: true } //Güncelennmiş halini bana geri döndür
+      { new: true }, //Güncelennmiş halini bana geri döndür
     );
 
     if (!updatedAppointment) {
@@ -319,7 +319,7 @@ app.put("/api/users/update", auth, async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       updateData,
-      { new: true } //Güncelennmiş halini bana geri döndür
+      { new: true }, //Güncelennmiş halini bana geri döndür
     ).select("-password -__v"); //Şifre ve __v alanlarını döndürme
 
     res.json({ message: "Kullanıcı bilgileri güncellendi", user: updatedUser });
@@ -354,7 +354,7 @@ app.post("/api/users/toggle-favorite", auth, async (req, res) => {
     if (favoriteStrings.includes(barberId)) {
       //Eğer favori ise kaldır
       user.favorites = user.favorites.filter(
-        (favId) => favId.toString() !== barberId
+        (favId) => favId.toString() !== barberId,
       );
     } else {
       //Eğer favori değilse ekle

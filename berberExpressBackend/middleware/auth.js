@@ -10,12 +10,8 @@ const jwt = require("jsonwebtoken");
 function auth(req, res, next) {
   //Headerdan tokeni alcaz
   const authHeader = req.header("Authorization");
-  console.log("------------------------------------------------");
-  console.log("🛑 BACKEND AUTH KONTROLÜ");
-  console.log("👉 Gelen Header:", authHeader);
 
   const token = authHeader?.replace("Bearer ", "");
-  console.log("👉 Ayrıştırılan Token:", token);
 
   if (!token) {
     console.log("❌ Token Yok!");
@@ -28,8 +24,6 @@ function auth(req, res, next) {
     //Secret key ile imzalanmış mı?
     //Expiration kontrolü
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    console.log("✅ Token Geçerli. Kullanıcı:", decoded);
 
     //Token içindeki bilgileri request objesine manuel olarak koyuyoruz
     req.user = decoded;

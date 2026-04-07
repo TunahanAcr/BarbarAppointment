@@ -95,6 +95,38 @@ export default function AppointmentScreen({ navigation }) {
       console.error(error);
     }
   };
+  const renderStatus = (item) => {
+    switch (item.status) {
+      case "cancelled":
+        return (
+          <Text style={{ color: "red", fontWeight: "bold" }}>İPTAL EDİLDİ</Text>
+        );
+
+      case "pending":
+        return (
+          <Text style={{ color: "orange", fontWeight: "bold" }}>
+            ONAY BEKLENİYOR
+          </Text>
+        );
+
+      case "approved":
+        return (
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={styles.statusText}>Onaylandı</Text>
+
+            <TouchableOpacity
+              onPress={() => handleCancel(item._id)}
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelButtonText}>İptal Et</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
   // --- KART TASARIMI (Kod tekrarını önlemek için) ---
   const renderAppointmentItem = (item) => (
     <View key={item._id} style={styles.appointmentCard}>
@@ -119,21 +151,7 @@ export default function AppointmentScreen({ navigation }) {
       <View style={[styles.row, styles.footerRow]}>
         <Text style={styles.appPrice}>{item.totalPrice} TL</Text>
 
-        {item.status === "cancelled" ? (
-          <Text style={{ color: "red", fontWeight: "bold" }}>İPTAL EDİLDİ</Text>
-        ) : (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={styles.statusText}>Onaylandı</Text>
-
-            {/* Sadece GELECEK randevular iptal edilebilir olsun istersek buraya kontrol koyabiliriz */}
-            <TouchableOpacity
-              onPress={() => handleCancel(item._id)}
-              style={styles.cancelButton}
-            >
-              <Text style={styles.cancelButtonText}>İptal Et</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {renderStatus(item)}
       </View>
     </View>
   );

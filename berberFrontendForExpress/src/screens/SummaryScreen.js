@@ -31,7 +31,7 @@ export default function SummaryScreen({ navigation }) {
       const cleanServices = services.map((service) => ({
         name: service.name,
         duration: service.duration,
-        _id: service._id,
+        id: service._id,
       }));
       //Gönderilecek Paket Backend Şemasına Uygun
       const appointmentData = {

@@ -1,3 +1,14 @@
+import { useState } from "react";
+import {
+  TextInput,
+  TouchableOpacity,
+  Text,
+  Alert,
+  StyleSheet,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import api from "../api";
+
 export default function SignupScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

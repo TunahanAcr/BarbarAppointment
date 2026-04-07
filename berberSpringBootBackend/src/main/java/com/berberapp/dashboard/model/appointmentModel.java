@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.time.Instant;
 
+import com.berberapp.dashboard.model.Service;
 
 @Document(collection = "appointments") // MongoDB Compass'taki isimle birebir aynı olmalı!
 public record appointmentModel(
@@ -16,7 +17,7 @@ public record appointmentModel(
         String date,
         String time,
         String fullDate,
-        List<String> services,
+        List<Service> services,
         Integer totalPrice, // DB'de Int32 görünüyor, Integer daha iyi olur
         String userName,
         ObjectId userId,      // DB'de ObjectId ama String olarak okunabilir

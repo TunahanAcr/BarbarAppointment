@@ -1,7 +1,8 @@
 import { createContext, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const AuthContext = createContext({
-  isLoading: true,
+  checkingAuth: true,
   isLoggedIn: false,
   user: null,
   login: () => {},
@@ -9,7 +10,7 @@ export const AuthContext = createContext({
 });
 
 export const AuthProvider = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -30,6 +31,8 @@ export const AuthProvider = ({ children }) => {
         console.log("Kullanıcı bilgileri bulunamadı");
         setIsLoggedIn(false);
         setUser(null);
+      } finally {
+        setCheckingAuth(false);
       }
     };
 
@@ -41,13 +44,20 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    setIsLoggedIn(false);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await AsyncStorage.multiRemove(["userEmail", "userName"]);
+      setIsLoggedIn(false);
+      setUser(null);
+    } catch (err) {
+      console.log("Çıkış yaparken hata oluştu");
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, checkingAuth, user, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

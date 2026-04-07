@@ -1,3 +1,4 @@
+import { View, Text } from "react-native";
 export default function LoadingScreen() {
   return (
     <View
@@ -5,6 +6,7 @@ export default function LoadingScreen() {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "#F8F9FA",
       }}
     >
       <Text>Giriş Durumu Kontrol Ediliyor...</Text>
