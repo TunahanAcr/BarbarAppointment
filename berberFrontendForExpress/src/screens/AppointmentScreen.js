@@ -29,6 +29,7 @@ export default function AppointmentScreen({ navigation }) {
     return new Date(app.fullDate) >= now;
   });
 
+  //Geçmiş randevular
   const past = appointments.filter((app) => {
     if (!app.fullDate) return false;
     return new Date(app.fullDate) < now;

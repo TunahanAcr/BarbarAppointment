@@ -1,5 +1,3 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar } from "expo-status-bar";
 import {
   FlatList,
@@ -8,286 +6,265 @@ import {
   View,
   TouchableOpacity,
   RefreshControl,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../api";
 import { useEffect, useState, useCallback } from "react";
 import { berberId } from "../configId";
+import { Colors } from "../constants/colors";
+import { Dimensions } from "react-native";
+import { useAppointments } from "../hooks/useAppointments";
+
+const { width } = Dimensions.get("window");
 
 export default function App() {
-  const [appointments, setAppointments] = useState([]);
-  const [netDailyRevenue, setNetDailyRevenue] = useState(0);
-  const [pendingDailyRevenue, setPendingDailyRevenue] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
+  const today = new Date().toISOString().split("T")[0];
+  const {
+    appointments,
+    netDailyRevenue,
+    pendingDailyRevenue,
+    refreshing,
+    fetchDashboardData,
+    handleAccept,
+    handleCancel,
+  } = useAppointments(today);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD" formatında bugünün tarihi
-      // Randevuları ve günlük geliri aynı anda çekmek için Promise.all kullanıyoruz
-      console.log(today);
-      const [appointmentsResponse, netRevenueResponse, pendingRevenueResponse] =
-        await Promise.all([
-          api.get(
-            `/dashboard/appointments/barber/${berberId}/daily?fullDate=${today}`,
-          ),
-          api.get(
-            `/dashboard/appointments/barber/${berberId}/price?status=approved&fullDate=${today}`,
-          ),
-          api.get(
-            `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${today}`,
-          ),
-        ]);
-
-      setAppointments(appointmentsResponse.data);
-      setNetDailyRevenue(netRevenueResponse.data);
-      setPendingDailyRevenue(pendingRevenueResponse.data);
-    } catch (err) {
-      console.log("Error fetching dashboard data:", err);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  console.log("Dashboard verileri çekildi");
-  console.log("Randevular:", appointments);
-  console.log("Net Günlük Gelir:", netDailyRevenue);
-  console.log("Bekleyen Günlük Gelir:", pendingDailyRevenue);
-
-  const handleAccept = async (id) => {
-    try {
-      console.log(`Randevu ${id} onaylandı!`);
-
-      const response = await api.patch(`/dashboard/appointments/${id}`, {
-        status: "approved",
-      });
-
-      if (response.status === 200) {
-        setAppointments((prev) =>
-          prev.map((appt) => (appt.id === id ? response.data : appt)),
-        );
-        setNetDailyRevenue((prev) => prev + response.data.totalPrice);
-        setPendingDailyRevenue((prev) => prev - response.data.totalPrice);
-      }
-    } catch (err) {
-      console.log("Onaylarken hata oluştu", err);
-    }
-  };
-
-  const handleCancel = async (id) => {
-    try {
-      console.log(`Randevu ${id} iptal edildi!`);
-
-      const response = await api.patch(`/dashboard/appointments/${id}`, {
-        status: "cancelled",
-      });
-
-      if (response.status === 200) {
-        setAppointments((prev) =>
-          prev.map((appt) => (appt.id === id ? response.data : appt)),
-        );
-        setPendingDailyRevenue((prev) => prev - response.data.totalPrice);
-      }
-    } catch (err) {
-      console.log("İptal edilirken hata oluştu", err);
-    }
+  const onRefresh = () => {
+    fetchDashboardData(today);
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        {/* Günlük Gelir Bilgisi */}
-        <Text style={styles.headerTitle}>Günlük Gelir</Text>
-        <View style={styles.revenueContainer}>
-          <View style={styles.revenueBox}>
-            <Text style={styles.revenueLabel}>Net Gelir</Text>
-            <Text style={styles.revenueValue}>{netDailyRevenue} ₺</Text>
-          </View>
-          <View style={styles.revenueBox}>
-            <Text style={styles.revenueLabel}>Bekleyen Gelir</Text>
-            <Text style={styles.revenueValue}>{pendingDailyRevenue} ₺</Text>
-          </View>
+      {/* Üst Kısım: Karşılama ve Özet */}
+      <View style={styles.headerSection}>
+        <Text style={styles.welcomeText}>İyi çalışmalar,</Text>
+        <Text style={styles.userNameText}> "Usta"</Text>
+      </View>
+
+      {/* Günlük Gelir Kartları (Winner Stats) */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Net Gelir</Text>
+          <Text style={styles.statValue}>{netDailyRevenue} ₺</Text>
+        </View>
+        <View style={[styles.statCard, { borderColor: Colors.accent }]}>
+          <Text style={styles.statLabel}>Bekleyen</Text>
+          <Text style={[styles.statValue, { color: Colors.accent }]}>
+            {pendingDailyRevenue} ₺
+          </Text>
         </View>
       </View>
-      <Text style={styles.headerTitle}>Bugünkü Randevular</Text>
-      <FlatList
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#27AE60"]}
-            tintColor="#27AE60"
-          />
-        }
-        data={appointments}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            {/* Üst Kat: Bilgiler ve Fiyat */}
-            <View style={styles.cardHeader}>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.userName}</Text>
-                <Text style={styles.timeText}>⏰ {item.time}</Text>
-              </View>
-              <Text style={styles.priceText}>{item.totalPrice} ₺</Text>
-            </View>
 
-            {/* Alt Kat: Butonlar veya Durum Yazısı */}
-            <View style={styles.buttonContainer}>
-              {item.status === "pending" ? (
-                <>
+      <Text style={[styles.statLabel, { marginBottom: 15, fontSize: 14 }]}>
+        Bugünkü Randevular
+      </Text>
+
+      {appointments.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ textAlign: "center", color: Colors.textMuted }}>
+            Bugün için henüz bir randevu bulunmamaktadır.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={appointments}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
+            />
+          }
+          renderItem={({ item }) => (
+            <View
+              style={[
+                styles.appointmentCard,
+                // Duruma göre sol şerit rengini dinamik değiştiriyoruz 🎨
+                {
+                  borderLeftColor:
+                    item.status === "approved"
+                      ? Colors.primary
+                      : item.status === "cancelled"
+                        ? Colors.error
+                        : Colors.accent,
+                },
+              ]}
+            >
+              <View style={styles.customerInfo}>
+                <Text style={styles.customerName}>{item.userName}</Text>
+                <Text style={styles.serviceType}>
+                  {item.status === "approved"
+                    ? "✅ Onaylandı"
+                    : item.status === "cancelled"
+                      ? "❌ İptal Edildi"
+                      : "⏳ Onay Bekliyor"}
+                </Text>
+              </View>
+
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={styles.timeText}>{item.time}</Text>
+                <Text style={[styles.statLabel, { marginTop: 4 }]}>
+                  {item.totalPrice} ₺
+                </Text>
+              </View>
+
+              {/* Sadece beklemedeyse butonları göster */}
+              {item.status === "pending" && (
+                <View style={[styles.actionButtons, { marginLeft: 15 }]}>
                   <TouchableOpacity
                     style={styles.cancelButton}
                     onPress={() => handleCancel(item.id)}
                   >
-                    <Text style={styles.cancelButtonText}>İptal Et</Text>
+                    <Text style={[styles.buttonText, { color: Colors.error }]}>
+                      ❌
+                    </Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
-                    style={styles.acceptButton}
+                    style={styles.confirmButton}
                     onPress={() => handleAccept(item.id)}
                   >
                     <Text style={styles.buttonText}>Onayla</Text>
                   </TouchableOpacity>
-                </>
-              ) : (
-                <Text style={styles.statusText}>
-                  {item.status === "approved" && "✅ Onaylandı"}
-                  {item.status === "cancelled" && "❌ İptal Edildi"}
-                </Text>
+                </View>
               )}
             </View>
-          </View>
-        )}
-      />
+          )}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // 🌌 Ana Ekran: Derinlik ve Odaklanma
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
-    paddingTop: 50,
+    backgroundColor: Colors.background,
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  header: {
-    marginBottom: 20,
-  },
-  revenueContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+
+  // 📈 Başlık ve Özet Alanı
+  headerSection: {
+    marginBottom: 25,
     marginTop: 10,
   },
-  revenueBox: {
-    backgroundColor: "#FFFFFF",
-    padding: 15,
-    borderRadius: 10,
-    width: "48%",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  welcomeText: {
+    fontSize: 16,
+    color: Colors.textMuted,
+    fontFamily: "System", // Varsa özel fontun buraya
   },
-  revenueLabel: {
-    fontSize: 14,
-    color: "#7F8C8D",
-    marginBottom: 5,
+  userNameText: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: Colors.text,
+    marginTop: 4,
   },
-  revenueValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#27AE60",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#2C3E50",
-    marginBottom: 20,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    // flexDirection: 'row' buradan kalktı, kart artık dikey (column) diziliyor
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: "row", // Üst katı yan yana dizer
+
+  // 💳 Özet Kartları (Gelir/Randevu Sayısı)
+  statsContainer: {
+    flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    marginBottom: 25,
   },
-  userInfo: {
+  statCard: {
+    backgroundColor: Colors.surface,
+    width: width / 2 - 30,
+    padding: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    // Hafif gölge (iOS)
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    // Gölge (Android)
+    elevation: 8,
+  },
+  statLabel: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  statValue: {
+    color: Colors.primary, // Kazancı simgeleyen yeşil 🟢
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 8,
+  },
+
+  // 🗓️ Randevu Kartı: Profesyonel Liste
+  appointmentCard: {
+    backgroundColor: Colors.surface,
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.accent, // Bekleyen randevular için Amber sarısı
+  },
+  customerInfo: {
     flex: 1,
   },
-  userName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#34495E",
-    marginBottom: 4,
+  customerName: {
+    color: Colors.text,
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  serviceType: {
+    color: Colors.textMuted,
+    fontSize: 14,
+    marginTop: 2,
   },
   timeText: {
-    fontSize: 14,
-    color: "#7F8C8D",
-  },
-  priceText: {
-    fontSize: 18,
+    color: Colors.text,
     fontWeight: "bold",
-    color: "#27AE60",
+    fontSize: 15,
   },
-  buttonContainer: {
+
+  // ✅ Aksiyon Butonları (Kazanç Odaklı)
+  actionButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    marginTop: 16,
-    paddingTop: 16, // Araya çizgi çekmek için boşluk
-    borderTopWidth: 1,
-    borderColor: "#EEEEEE",
     gap: 10,
   },
-  acceptButton: {
-    backgroundColor: "#27AE60",
+  confirmButton: {
+    backgroundColor: Colors.primary, // Zümrüt Yeşili (Psikolojik ödül)
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     borderRadius: 8,
   },
   cancelButton: {
-    backgroundColor: "#FFF",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "#E74C3C",
+    borderColor: Colors.error,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   buttonText: {
-    color: "#FFF",
+    color: Colors.white,
     fontWeight: "bold",
-    textAlign: "center",
+    fontSize: 12,
   },
-  cancelButtonText: {
-    color: "#E74C3C",
-    fontWeight: "bold",
-    textAlign: "center",
+
+  // 🚪 Çıkış ve Yan Butonlar
+  secondaryButton: {
+    marginTop: 20,
+    alignItems: "center",
+    padding: 15,
   },
-  statusText: {
+  secondaryButtonText: {
+    color: Colors.textMuted,
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#7F8C8D",
-    fontStyle: "italic",
+    textDecorationLine: "underline",
   },
 });

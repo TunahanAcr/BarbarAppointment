@@ -12,6 +12,11 @@ import AppointmentsScreen from "./src/screens/AppointmentsScreen";
 import FinanceScreen from "./src/screens/FinanceScreen";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import { Ionicons } from "@expo/vector-icons"; // İkonlar için
+import { Colors } from "./src/constants/colors";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// 1. ADIM: QueryClient oluşturuyoruz
+const queryClient = new QueryClient();
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -20,38 +25,81 @@ function MainTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        // İkonların Kazanç Odaklı Renk Yapılandırması 🎨
         tabBarIcon: ({ color, size }) => {
           let iconName;
-          if (route.name === "Ana Sayfa") iconName = "home";
-          else if (route.name === "Randevular") iconName = "calendar";
-          else if (route.name === "Profil") iconName = "person";
+          if (route.name === "Home") iconName = "home";
+          else if (route.name === "Appointments") iconName = "calendar";
+          else if (route.name === "Finance")
+            iconName = "stats-chart"; // Gelir-gider için grafik ikonu
+          else if (route.name === "Profile") iconName = "person";
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: "#f1c40f", // Berber dükkanının altın sarısı rengi
-        tabBarInactiveTintColor: "gray",
+        // Aktif sekme: Zümrüt Yeşili (Kazancı ve ilerlemeyi temsil eder) 🟢
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.textMuted,
+
+        // Tab Bar'ın arka planını koyu yapıp ayırıyoruz
+        tabBarStyle: {
+          backgroundColor: Colors.surface,
+          borderTopColor: Colors.border,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+
+        // Üst başlık (Header) tasarımı
+        headerStyle: {
+          backgroundColor: Colors.background,
+          elevation: 0, // Android gölge kaldır
+          shadowOpacity: 0, // iOS gölge kaldır
+        },
+        headerTintColor: Colors.text,
+        headerTitleStyle: {
+          fontWeight: "bold",
+          fontSize: 18,
+        },
         headerShown: true,
       })}
     >
-      <Tab.Screen name="Home" component={HomePage} />
-      <Tab.Screen name="Appointments" component={AppointmentsScreen} />
-      <Tab.Screen name="Finance" component={FinanceScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Home"
+        component={HomePage}
+        options={{ title: "Pano" }}
+      />
+      <Tab.Screen
+        name="Appointments"
+        component={AppointmentsScreen}
+        options={{ title: "Ajanda" }}
+      />
+      <Tab.Screen
+        name="Finance"
+        component={FinanceScreen}
+        options={{ title: "Kasa" }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: "Profil" }}
+      />
     </Tab.Navigator>
   );
 }
 
-// 1. ADIM: Navigasyon mantığını ayrı bir fonksiyon (bileşen) yapıyoruz
 function RootNavigation() {
-  // Burası artık AuthProvider içinde olduğu için useContext çalışacaktır! ✅
-  const { isLoggedIn, checkingAuth } = useContext(AuthContext); // Burada AuthContext kullanmalısın, AuthProvider değil
+  const { isLoggedIn, checkingAuth } = useContext(AuthContext);
 
   if (checkingAuth) {
+    // Yükleme ekranı da koyu temaya uygun olmalı
     return <LoadingScreen />;
   }
 
   return (
     <NavigationContainer>
+      {/* Stack Navigator'da headerShown: false yapıyoruz çünkü 
+        başlıkları Tab Navigator içinden yöneteceğiz. 
+      */}
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <Stack.Screen name="MainTabs" component={MainTabNavigator} />
@@ -69,8 +117,10 @@ function RootNavigation() {
 // 2. ADIM: Ana App fonksiyonunda sadece sarmalama yapıyoruz
 export default function App() {
   return (
-    <AuthProvider>
-      <RootNavigation />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RootNavigation />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
