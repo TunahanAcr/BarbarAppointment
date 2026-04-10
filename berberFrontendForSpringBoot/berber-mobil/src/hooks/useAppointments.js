@@ -2,48 +2,70 @@ import api from "../api";
 import { berberId } from "../configId";
 import { Alert } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
-export const useAppointments = (selectedDate) => {
-  const queryClient = useQueryClient();
-
+export const useAppointments = (selectedDate, onlyPending = false) => {
+  // O an animasyonla silinen kartın ID'sini tutan state
+  const [removingItemId, setRemovingItemId] = useState(null);
+  const queryClient = useQueryClient(); //Global cache managera erişim aynı ugulamada 1 kere oluşturulur ve tüm componentlerde kullanılır
   // 🔄 Veri Çekme Fonksiyonu
   const fetchDashboardData = async (date) => {
-    const [appointmentsResponse, netRevenueResponse, pendingRevenueResponse] =
-      await Promise.all([
+    const requests = [
+      api.get(
+        `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${date}`,
+      ),
+      api.get(
+        `/dashboard/appointments/barber/${berberId}/price?status=approved&fullDate=${date}`,
+      ),
+    ];
+    if (!onlyPending) {
+      requests.push(
         api.get(
           `/dashboard/appointments/barber/${berberId}/daily?fullDate=${date}`,
         ),
-        api.get(
-          `/dashboard/appointments/barber/${berberId}/price?status=approved&fullDate=${date}`,
-        ),
-        api.get(
-          `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${date}`,
-        ),
-      ]);
+      );
+    } else {
+      // Sadece bekleyen randevuları çek
+      requests.push(
+        api.get(`/dashboard/appointments/barber/${berberId}/pending`),
+      );
+    }
 
+    const [appointmentsResponse, pendingRevenueResponse, netRevenueResponse] =
+      await Promise.all(requests);
     console.log("Randevular:", appointmentsResponse.data);
     return {
       appointments: appointmentsResponse.data,
-      netDailyRevenue: netRevenueResponse.data,
       pendingDailyRevenue: pendingRevenueResponse.data,
+      netDailyRevenue: netRevenueResponse?.data || 0,
     };
   };
-
+  // bu dördü otomatik olarak oluşturulur ve biz sadece fonksiyonları tanımlarız. data : api den gelen veri, isLoading: ilk veri çekilirken true olur, isFetching: her veri güncellemesinde true olur, refetch: manuel olarak tekrar API çağırır
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["dashboardData", berberId, selectedDate], // Verinin benzersiz anahtarı
+    queryKey: ["dashboardData", berberId, selectedDate, onlyPending], // Verinin benzersiz anahtarı
     queryFn: () => fetchDashboardData(selectedDate), // Veriyi çekme fonksiyonu
   });
 
   // ✅ Onaylama Fonksiyonu
+
   const handleAccept = async (id) => {
     Alert.alert(
       "Randevu Onayı",
       "Bu randevuyu onaylamak istediğinize emin misiniz?",
       [
         { text: "İptal", style: "cancel" },
-        { text: "Onayla", onPress: () => onAccept.mutate(id) },
+        { text: "Onayla", onPress: () => onActionPress(id, "accept") },
       ],
     );
+  };
+
+  const onActionPress = (id, type) => {
+    setRemovingItemId(id);
+    if (type === "accept") {
+      onAccept.mutate(id);
+    } else if (type === "cancel") {
+      onCancel.mutate(id);
+    }
   };
 
   const onAccept = useMutation({
@@ -54,9 +76,7 @@ export const useAppointments = (selectedDate) => {
     // Başarılı Onaylama
     onSuccess: () => {
       console.log("Randevu onaylandı!");
-      queryClient.invalidateQueries({
-        queryKey: ["dashboardData", berberId, selectedDate],
-      }); // Veriyi yeniden çek sadece ilgili query'yi invalid et
+      invalidateDashboard();
     },
 
     onError: (err) => {
@@ -71,7 +91,7 @@ export const useAppointments = (selectedDate) => {
       "Bu randevuyu iptal etmek istediğinize emin misiniz?",
       [
         { text: "İptal", style: "cancel" },
-        { text: "Onayla", onPress: () => onCancel.mutate(id) },
+        { text: "Onayla", onPress: () => onActionPress(id, "cancel") },
       ],
     );
   };
@@ -82,15 +102,19 @@ export const useAppointments = (selectedDate) => {
       }),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["dashboardData", berberId, selectedDate],
-      }); // Veriyi yeniden çek
+      invalidateDashboard();
     },
 
     onError: (err) => {
       console.log("İptal hatası:", err);
     },
   });
+
+  const invalidateDashboard = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["dashboardData", berberId, selectedDate, onlyPending],
+    });
+  };
 
   // Dışarıya neleri kullandıracağız?
   return {
@@ -99,8 +123,10 @@ export const useAppointments = (selectedDate) => {
     pendingDailyRevenue: data?.pendingDailyRevenue || 0,
     isLoading, // Sadece ilk kez veri .çekilirken true olur
     refreshing: isFetching, // Her güncellemede true olur
-    fetchDashboardData: refetch,
+    refetch,
     handleAccept,
     handleCancel,
+    removingItemId,
+    setRemovingItemId,
   };
 };

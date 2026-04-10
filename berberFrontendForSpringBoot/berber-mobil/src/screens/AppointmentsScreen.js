@@ -34,13 +34,13 @@ export default function AppointmentsScreen() {
     appointments,
     netDailyRevenue,
     refreshing,
-    fetchDashboardData,
+    refetch,
     handleAccept,
     handleCancel,
   } = useAppointments(selectedDate);
 
   const onRefresh = () => {
-    fetchDashboardData(selectedDate);
+    refetch();
   };
 
   return (

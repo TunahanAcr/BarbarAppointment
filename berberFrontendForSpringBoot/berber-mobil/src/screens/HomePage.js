@@ -8,12 +8,11 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import api from "../api";
-import { useEffect, useState, useCallback } from "react";
-import { berberId } from "../configId";
+
 import { Colors } from "../constants/colors";
 import { Dimensions } from "react-native";
 import { useAppointments } from "../hooks/useAppointments";
+import { SwipeableAppointmentCard } from "../constants/SwipeableAppointmentCard";
 
 const { width } = Dimensions.get("window");
 
@@ -24,13 +23,15 @@ export default function App() {
     netDailyRevenue,
     pendingDailyRevenue,
     refreshing,
-    fetchDashboardData,
+    refetch,
     handleAccept,
     handleCancel,
-  } = useAppointments(today);
+    removingItemId,
+    setRemovingItemId,
+  } = useAppointments(today, true);
 
   const onRefresh = () => {
-    fetchDashboardData(today);
+    refetch();
   };
 
   return (
@@ -80,59 +81,68 @@ export default function App() {
             />
           }
           renderItem={({ item }) => (
-            <View
-              style={[
-                styles.appointmentCard,
-                // Duruma göre sol şerit rengini dinamik değiştiriyoruz 🎨
-                {
-                  borderLeftColor:
-                    item.status === "approved"
-                      ? Colors.primary
-                      : item.status === "cancelled"
-                        ? Colors.error
-                        : Colors.accent,
-                },
-              ]}
+            <SwipeableAppointmentCard
+              isRemoving={item.id === removingItemId}
+              onAnimationComplete={() => {
+                setRemovingItemId(null);
+              }}
             >
-              <View style={styles.customerInfo}>
-                <Text style={styles.customerName}>{item.userName}</Text>
-                <Text style={styles.serviceType}>
-                  {item.status === "approved"
-                    ? "✅ Onaylandı"
-                    : item.status === "cancelled"
-                      ? "❌ İptal Edildi"
-                      : "⏳ Onay Bekliyor"}
-                </Text>
-              </View>
-
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.timeText}>{item.time}</Text>
-                <Text style={[styles.statLabel, { marginTop: 4 }]}>
-                  {item.totalPrice} ₺
-                </Text>
-              </View>
-
-              {/* Sadece beklemedeyse butonları göster */}
-              {item.status === "pending" && (
-                <View style={[styles.actionButtons, { marginLeft: 15 }]}>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => handleCancel(item.id)}
-                  >
-                    <Text style={[styles.buttonText, { color: Colors.error }]}>
-                      ❌
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.confirmButton}
-                    onPress={() => handleAccept(item.id)}
-                  >
-                    <Text style={styles.buttonText}>Onayla</Text>
-                  </TouchableOpacity>
+              <View
+                style={[
+                  styles.appointmentCard,
+                  // Duruma göre sol şerit rengini dinamik değiştiriyoruz 🎨
+                  {
+                    borderLeftColor:
+                      item.status === "approved"
+                        ? Colors.primary
+                        : item.status === "cancelled"
+                          ? Colors.error
+                          : Colors.accent,
+                  },
+                ]}
+              >
+                <View style={styles.customerInfo}>
+                  <Text style={styles.customerName}>{item.userName}</Text>
+                  <Text style={styles.serviceType}>
+                    {item.status === "approved"
+                      ? "✅ Onaylandı"
+                      : item.status === "cancelled"
+                        ? "❌ İptal Edildi"
+                        : "⏳ Onay Bekliyor"}
+                  </Text>
                 </View>
-              )}
-            </View>
+
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={styles.timeText}>{item.time}</Text>
+                  <Text style={[styles.statLabel, { marginTop: 4 }]}>
+                    {item.totalPrice} ₺
+                  </Text>
+                </View>
+
+                {/* Sadece beklemedeyse butonları göster */}
+                {item.status === "pending" && (
+                  <View style={[styles.actionButtons, { marginLeft: 15 }]}>
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => handleCancel(item.id)}
+                    >
+                      <Text
+                        style={[styles.buttonText, { color: Colors.error }]}
+                      >
+                        ❌
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.confirmButton}
+                      onPress={() => handleAccept(item.id)}
+                    >
+                      <Text style={styles.buttonText}>Onayla</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </SwipeableAppointmentCard>
           )}
         />
       )}
