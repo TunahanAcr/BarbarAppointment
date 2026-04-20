@@ -28,10 +28,11 @@ export default function App() {
     handleCancel,
     removingItemId,
     setRemovingItemId,
+    invalidateDashboard,
   } = useAppointments(today, true);
 
   const onRefresh = () => {
-    refetch();
+    invalidateDashboard();
   };
 
   return (
@@ -60,92 +61,90 @@ export default function App() {
         Bugünkü Randevular
       </Text>
 
-      {appointments.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: "center" }}>
-          <Text style={{ textAlign: "center", color: Colors.textMuted }}>
-            Bugün için henüz bir randevu bulunmamaktadır.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={appointments}
-          keyExtractor={(item) => item.id.toString()}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ flexGrow: 1 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
-            />
-          }
-          renderItem={({ item }) => (
-            <SwipeableAppointmentCard
-              isRemoving={item.id === removingItemId}
-              onAnimationComplete={() => {
-                setRemovingItemId(null);
-              }}
-            >
-              <View
-                style={[
-                  styles.appointmentCard,
-                  // Duruma göre sol şerit rengini dinamik değiştiriyoruz 🎨
-                  {
-                    borderLeftColor:
-                      item.status === "approved"
-                        ? Colors.primary
-                        : item.status === "cancelled"
-                          ? Colors.error
-                          : Colors.accent,
-                  },
-                ]}
-              >
-                <View style={styles.customerInfo}>
-                  <Text style={styles.customerName}>{item.userName}</Text>
-                  <Text style={styles.serviceType}>
-                    {item.status === "approved"
-                      ? "✅ Onaylandı"
+      <FlatList
+        data={appointments}
+        keyExtractor={(item) => item.id.toString()}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
+        ListEmptyComponent={() => (
+          <View style={{ flex: 1, justifyContent: "center" }}>
+            <Text style={{ textAlign: "center", color: Colors.textMuted }}>
+              Bugün için henüz bir randevu bulunmamaktadır.
+            </Text>
+          </View>
+        )}
+        renderItem={({ item }) => (
+          <SwipeableAppointmentCard
+            isRemoving={item.id === removingItemId}
+            onAnimationComplete={() => {
+              setRemovingItemId(null);
+              invalidateDashboard(); // Animasyon tamamlandıktan sonra veriyi yenile
+            }}
+          >
+            <View
+              style={[
+                styles.appointmentCard,
+                // Duruma göre sol şerit rengini dinamik değiştiriyoruz 🎨
+                {
+                  borderLeftColor:
+                    item.status === "approved"
+                      ? Colors.primary
                       : item.status === "cancelled"
-                        ? "❌ İptal Edildi"
-                        : "⏳ Onay Bekliyor"}
-                  </Text>
-                </View>
-
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.timeText}>{item.time}</Text>
-                  <Text style={[styles.statLabel, { marginTop: 4 }]}>
-                    {item.totalPrice} ₺
-                  </Text>
-                </View>
-
-                {/* Sadece beklemedeyse butonları göster */}
-                {item.status === "pending" && (
-                  <View style={[styles.actionButtons, { marginLeft: 15 }]}>
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => handleCancel(item.id)}
-                    >
-                      <Text
-                        style={[styles.buttonText, { color: Colors.error }]}
-                      >
-                        ❌
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.confirmButton}
-                      onPress={() => handleAccept(item.id)}
-                    >
-                      <Text style={styles.buttonText}>Onayla</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                        ? Colors.error
+                        : Colors.accent,
+                },
+              ]}
+            >
+              <View style={styles.customerInfo}>
+                <Text style={styles.customerName}>{item.userName}</Text>
+                <Text style={styles.serviceType}>
+                  {item.status === "approved"
+                    ? "✅ Onaylandı"
+                    : item.status === "cancelled"
+                      ? "❌ İptal Edildi"
+                      : "⏳ Onay Bekliyor"}
+                </Text>
               </View>
-            </SwipeableAppointmentCard>
-          )}
-        />
-      )}
+
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={styles.timeText}>{item.time}</Text>
+                <Text style={[styles.statLabel, { marginTop: 4 }]}>
+                  {item.totalPrice} ₺
+                </Text>
+              </View>
+
+              {/* Sadece beklemedeyse butonları göster */}
+              {item.status === "pending" && (
+                <View style={[styles.actionButtons, { marginLeft: 15 }]}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => handleCancel(item.id)}
+                  >
+                    <Text style={[styles.buttonText, { color: Colors.error }]}>
+                      ❌
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={() => handleAccept(item.id)}
+                  >
+                    <Text style={styles.buttonText}>Onayla</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </SwipeableAppointmentCard>
+        )}
+      />
     </View>
   );
 }

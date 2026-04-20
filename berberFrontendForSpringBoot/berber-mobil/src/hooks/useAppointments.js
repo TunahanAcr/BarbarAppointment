@@ -10,6 +10,7 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
   const queryClient = useQueryClient(); //Global cache managera erişim aynı ugulamada 1 kere oluşturulur ve tüm componentlerde kullanılır
   // 🔄 Veri Çekme Fonksiyonu
   const fetchDashboardData = async (date) => {
+    console.log("Veri çekiliyor...");
     const requests = [
       api.get(
         `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${date}`,
@@ -17,33 +18,27 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
       api.get(
         `/dashboard/appointments/barber/${berberId}/price?status=approved&fullDate=${date}`,
       ),
+      api.get(
+        `/dashboard/appointments/barber/${berberId}/daily?fullDate=${date}`,
+      ),
     ];
-    if (!onlyPending) {
-      requests.push(
-        api.get(
-          `/dashboard/appointments/barber/${berberId}/daily?fullDate=${date}`,
-        ),
-      );
-    } else {
-      // Sadece bekleyen randevuları çek
-      requests.push(
-        api.get(`/dashboard/appointments/barber/${berberId}/pending`),
-      );
-    }
 
-    const [appointmentsResponse, pendingRevenueResponse, netRevenueResponse] =
+    const [pendingRevenueResponse, netRevenueResponse, appointmentsResponse] =
       await Promise.all(requests);
     console.log("Randevular:", appointmentsResponse.data);
     return {
-      appointments: appointmentsResponse.data,
+      appointments: onlyPending
+        ? appointmentsResponse.data.filter((appt) => appt.status === "pending")
+        : appointmentsResponse.data,
       pendingDailyRevenue: pendingRevenueResponse.data,
       netDailyRevenue: netRevenueResponse?.data || 0,
     };
   };
   // bu dördü otomatik olarak oluşturulur ve biz sadece fonksiyonları tanımlarız. data : api den gelen veri, isLoading: ilk veri çekilirken true olur, isFetching: her veri güncellemesinde true olur, refetch: manuel olarak tekrar API çağırır
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ["dashboardData", berberId, selectedDate, onlyPending], // Verinin benzersiz anahtarı
+    queryKey: ["dashboardData", berberId, selectedDate, { onlyPending }], // Verinin benzersiz anahtarı
     queryFn: () => fetchDashboardData(selectedDate), // Veriyi çekme fonksiyonu
+    refetchOnWindowFocus: true,
   });
 
   // ✅ Onaylama Fonksiyonu
@@ -76,10 +71,10 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
     // Başarılı Onaylama
     onSuccess: () => {
       console.log("Randevu onaylandı!");
-      invalidateDashboard();
     },
 
     onError: (err) => {
+      setRemovingItemId(null); // Hata durumunda silme animasyonunu iptal et
       console.log("Onaylama hatası:", err);
     },
   });
@@ -102,17 +97,18 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
       }),
 
     onSuccess: () => {
-      invalidateDashboard();
+      console.log("Randevu iptal edildi!");
     },
 
     onError: (err) => {
+      setRemovingItemId(null); // Hata durumunda silme animasyonunu iptal et
       console.log("İptal hatası:", err);
     },
   });
 
   const invalidateDashboard = () => {
     queryClient.invalidateQueries({
-      queryKey: ["dashboardData", berberId, selectedDate, onlyPending],
+      queryKey: ["dashboardData", berberId, selectedDate],
     });
   };
 
@@ -128,5 +124,6 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
     handleCancel,
     removingItemId,
     setRemovingItemId,
+    invalidateDashboard,
   };
 };

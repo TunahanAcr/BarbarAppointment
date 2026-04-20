@@ -37,10 +37,11 @@ export default function AppointmentsScreen() {
     refetch,
     handleAccept,
     handleCancel,
+    invalidateDashboard,
   } = useAppointments(selectedDate);
 
   const onRefresh = () => {
-    refetch();
+    invalidateDashboard();
   };
 
   return (
