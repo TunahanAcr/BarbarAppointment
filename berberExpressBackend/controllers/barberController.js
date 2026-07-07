@@ -1,6 +1,7 @@
 const Barber = require("../models/Barber");
 const Service = require("../models/Service");
 
+// Bütün berberleri getir anasayfa için
 exports.getAllBarbers = async (req, res) => {
   try {
     const barbers = await Barber.aggregate([
@@ -19,6 +20,7 @@ exports.getAllBarbers = async (req, res) => {
   }
 };
 
+// Berber detay sayfası
 exports.getBarberById = async (req, res) => {
   try {
     const { barberId } = req.params;

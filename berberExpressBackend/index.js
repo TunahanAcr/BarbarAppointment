@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config(); //.env dosyasını okumak için
-const Barber = require("./models/Barber");
 const Service = require("./models/Service");
 const Appointment = require("./models/Appointment");
 //Auth İşlemleri
@@ -19,6 +18,8 @@ const {
 } = require("./validation");
 const app = express();
 
+const barberRoutes = require("./routes/barberRoutes");
+
 const FAKE_HASH =
   "$2b$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUP1KUOYTa";
 
@@ -32,37 +33,7 @@ mongoose
   .then(() => console.log("Veritabanına bağlandı"))
   .catch((err) => console.log("Bağlantı HATASI", err));
 
-//Berberleri listele
-app.get("/api/barbers", async (req, res) => {
-  try {
-    const barbers = await Barber.aggregate([
-      {
-        $lookup: {
-          from: "services", // Hangi koleksiyona bakayım
-          localField: "_id", //Benim elimde olan ortak key
-          foreignField: "barberId", // Onun elindeki ortak key
-          as: "services", // Bulduklarımı hangi isimle kaydedeyim
-        },
-      },
-    ]);
-    res.json(barbers);
-  } catch (err) {
-    res.status(500).json({ message: "Sunucu Hatası" });
-  }
-});
-
-//Berber detay sayfası
-app.get("/api/barbers/:barberId", async (req, res) => {
-  try {
-    const { barberId } = req.params; //Linkteki id yi alıyoruz
-
-    const services = await Service.find({ barberId: barberId });
-
-    res.json(services);
-  } catch (err) {
-    res.status(500).json({ message: "Geçersiz ID" });
-  }
-});
+app.use("/api/barbers", barberRoutes);
 
 //Randevu Oluşturma
 app.post("/api/appointments", auth, async (req, res) => {

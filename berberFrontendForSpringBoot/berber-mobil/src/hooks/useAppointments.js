@@ -44,6 +44,7 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
   // ✅ Onaylama Fonksiyonu
 
   const handleAccept = async (id) => {
+    console.log("Onaylanacak ID:", id);
     Alert.alert(
       "Randevu Onayı",
       "Bu randevuyu onaylamak istediğinize emin misiniz?",
