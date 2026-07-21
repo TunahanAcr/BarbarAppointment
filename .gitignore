@@ -8,3 +8,5 @@ yarn-debug.log*
 yarn-error.log*
 application.properties
 package-lock.json
+load-test.yml
+package.json
