@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import {
   TextInput,
   TouchableOpacity,
   Text,
   Alert,
   StyleSheet,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../../context/AuthContext";
-import { useContext } from "react";
+import { Colors } from "../constants/colors";
 
 import api from "../api";
 
@@ -42,22 +43,40 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="E-posta"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Şifre"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Giriş Yap</Text>
-      </TouchableOpacity>
+      <View style={styles.header}>
+        <View style={styles.logoCircle}>
+          <Text style={styles.logoText}>✂️</Text>
+        </View>
+        <Text style={styles.title}>BerberApp</Text>
+        <Text style={styles.subtitle}>Yönetim paneline giriş yapın</Text>
+      </View>
+
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="E-posta"
+          placeholderTextColor={Colors.textFaint}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Şifre"
+          placeholderTextColor={Colors.textFaint}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.85}
+          onPress={handleLogin}
+        >
+          <Text style={styles.buttonText}>Giriş Yap</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -65,38 +84,64 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA", // Ana sayfadaki ferah arka plan
+    backgroundColor: Colors.background,
     justifyContent: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primaryMuted,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logoText: {
+    fontSize: 28,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: Colors.text,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginTop: 6,
+  },
+  form: {
+    width: "100%",
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    borderRadius: 12,
+    marginBottom: 14,
     fontSize: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    color: "#2C3E50",
+    color: Colors.text,
   },
   button: {
-    backgroundColor: "#27AE60", // Ana sayfadaki onay butonu yeşili
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
-    marginTop: 10,
-    shadowColor: "#27AE60",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    marginTop: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: Colors.background,
+    fontSize: 17,
+    fontWeight: "800",
   },
 });

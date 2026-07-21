@@ -1,6 +1,16 @@
 import React, { useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { AuthContext } from "../../context/AuthContext"; // Path'i kontrol et
+import { Colors } from "../constants/colors";
+
+const getInitials = (name = "") =>
+  name
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
 export default function ProfileScreen() {
   // 🗝️ Havuzdan logout fonksiyonunu ve kullanıcı bilgisini alalım
@@ -22,9 +32,18 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcomeText}>Hoş geldin, {user?.name}!</Text>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+      </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <Text style={styles.welcomeText}>Hoş geldin, {user?.name}!</Text>
+      {user?.email && <Text style={styles.emailText}>{user.email}</Text>}
+
+      <TouchableOpacity
+        style={styles.logoutButton}
+        activeOpacity={0.85}
+        onPress={handleLogout}
+      >
         <Text style={styles.logoutText}>Güvenli Çıkış</Text>
       </TouchableOpacity>
     </View>
@@ -36,22 +55,49 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.background,
+    paddingHorizontal: 24,
+  },
+  avatar: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: Colors.primaryMuted,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  avatarText: {
+    color: Colors.primary,
+    fontWeight: "800",
+    fontSize: 26,
   },
   welcomeText: {
     fontSize: 20,
-    marginBottom: 20,
-    fontWeight: "bold",
+    fontWeight: "800",
+    color: Colors.text,
+    textAlign: "center",
+  },
+  emailText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginTop: 6,
+    marginBottom: 30,
   },
   logoutButton: {
-    backgroundColor: "#e74c3c",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 8,
+    backgroundColor: Colors.errorMuted,
+    borderWidth: 1,
+    borderColor: Colors.error,
+    paddingVertical: 13,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    marginTop: 24,
   },
   logoutText: {
-    color: "white",
-    fontWeight: "bold",
+    color: Colors.error,
+    fontWeight: "800",
     fontSize: 16,
   },
 });

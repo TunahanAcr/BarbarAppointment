@@ -12,8 +12,18 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Colors } from "../constants/colors";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
+
+const getInitials = (name = "") =>
+  name
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
 export default function ProfileScreen({ navigation }) {
   const [name, setName] = React.useState("");
@@ -70,10 +80,20 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={[styles.container]}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Başlık */}
         <Text style={styles.title}>Profil Ayarları</Text>
+
+        {/* Avatar */}
+        <View style={styles.avatarWrapper}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{getInitials(name)}</Text>
+          </View>
+        </View>
 
         {/* Form Kutusu */}
         <View style={styles.card}>
@@ -83,7 +103,7 @@ export default function ProfileScreen({ navigation }) {
             value={name}
             onChangeText={setName}
             placeholder="Ad Soyad"
-            placeholderTextColor="#666"
+            placeholderTextColor={Colors.textFaint}
           />
 
           <Text style={styles.label}>Email</Text>
@@ -92,14 +112,15 @@ export default function ProfileScreen({ navigation }) {
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
-            placeholderTextColor="#666"
+            placeholderTextColor={Colors.textFaint}
           />
 
           {/* Güncelle Butonu */}
           <TouchableOpacity
-            style={styles.saveButton}
+            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
             onPress={handleUpdateProfile}
             disabled={loading}
+            activeOpacity={0.85}
           >
             <Text style={styles.saveButtonText}>
               {loading ? "Yükleniyor..." : "Güncelle"}
@@ -108,8 +129,12 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         {/* Çıkış Butonu */}
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <Ionicons name="log-out-outline" size={24} color="#c0392b" />
+        <TouchableOpacity
+          onPress={handleLogout}
+          style={styles.logoutButton}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="log-out-outline" size={22} color={Colors.error} />
           <Text style={styles.logoutText}>Çıkış Yap</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -120,48 +145,84 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: Colors.background,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   content: {
     flex: 1,
-    paddingHorizantal: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
   },
   title: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: Colors.text,
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    marginBottom: 10,
+  },
+  avatarWrapper: {
+    alignItems: "center",
     marginBottom: 20,
+  },
+  avatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: Colors.primaryMuted,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  avatarText: {
+    color: Colors.primary,
+    fontWeight: "800",
+    fontSize: 24,
   },
   card: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: Colors.surface,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   label: {
-    color: "#ccc",
+    color: Colors.textMuted,
     marginBottom: 8,
     marginTop: 10,
+    fontSize: 13,
+    fontWeight: "600",
   },
   input: {
-    backgroundColor: "#333",
-    color: "white",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: Colors.surfaceElevated,
+    color: Colors.text,
+    padding: 13,
+    borderRadius: 10,
     fontSize: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   saveButton: {
-    backgroundColor: "#f1c40f",
+    backgroundColor: Colors.primary,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 22,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   saveButtonText: {
-    color: "#000",
-    fontWeight: "bold",
+    color: Colors.background,
+    fontWeight: "800",
     fontSize: 16,
   },
   logoutButton: {
@@ -170,12 +231,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 15,
     borderWidth: 1,
-    borderColor: "#c0392b",
-    borderRadius: 8,
+    borderColor: Colors.error,
+    borderRadius: 10,
+    backgroundColor: Colors.errorMuted,
   },
   logoutText: {
-    color: "#c0392b",
-    fontWeight: "bold",
+    color: Colors.error,
+    fontWeight: "800",
     marginLeft: 10,
     fontSize: 16,
   },

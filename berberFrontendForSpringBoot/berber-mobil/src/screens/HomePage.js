@@ -6,15 +6,30 @@ import {
   View,
   TouchableOpacity,
   RefreshControl,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Colors } from "../constants/colors";
-import { Dimensions } from "react-native";
 import { useAppointments } from "../hooks/useAppointments";
 import { SwipeableAppointmentCard } from "../constants/SwipeableAppointmentCard";
 
 const { width } = Dimensions.get("window");
+
+const STATUS_META = {
+  approved: { label: "Onaylandı", color: Colors.primary, bg: Colors.primaryMuted },
+  cancelled: { label: "İptal Edildi", color: Colors.error, bg: Colors.errorMuted },
+  pending: { label: "Onay Bekliyor", color: Colors.accent, bg: Colors.accentMuted },
+};
+
+const getInitials = (name = "") =>
+  name
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
 export default function App() {
   const today = new Date().toISOString().split("T")[0];
@@ -36,11 +51,13 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="light" />
+
       {/* Üst Kısım: Karşılama ve Özet */}
       <View style={styles.headerSection}>
         <Text style={styles.welcomeText}>İyi çalışmalar,</Text>
-        <Text style={styles.userNameText}> "Usta"</Text>
+        <Text style={styles.userNameText}>Usta</Text>
       </View>
 
       {/* Günlük Gelir Kartları (Winner Stats) */}
@@ -57,15 +74,13 @@ export default function App() {
         </View>
       </View>
 
-      <Text style={[styles.statLabel, { marginBottom: 15, fontSize: 14 }]}>
-        Bugünkü Randevular
-      </Text>
+      <Text style={styles.sectionLabel}>Bugünkü Randevular</Text>
 
       <FlatList
         data={appointments}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -75,77 +90,84 @@ export default function App() {
           />
         }
         ListEmptyComponent={() => (
-          <View style={{ flex: 1, justifyContent: "center" }}>
-            <Text style={{ textAlign: "center", color: Colors.textMuted }}>
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <Text style={styles.emptyIcon}>📅</Text>
+            </View>
+            <Text style={styles.emptyText}>
               Bugün için henüz bir randevu bulunmamaktadır.
             </Text>
           </View>
         )}
-        renderItem={({ item }) => (
-          <SwipeableAppointmentCard
-            isRemoving={item.id === removingItemId}
-            onAnimationComplete={() => {
-              setRemovingItemId(null);
-              invalidateDashboard(); // Animasyon tamamlandıktan sonra veriyi yenile
-            }}
-          >
-            <View
-              style={[
-                styles.appointmentCard,
-                // Duruma göre sol şerit rengini dinamik değiştiriyoruz 🎨
-                {
-                  borderLeftColor:
-                    item.status === "approved"
-                      ? Colors.primary
-                      : item.status === "cancelled"
-                        ? Colors.error
-                        : Colors.accent,
-                },
-              ]}
+        renderItem={({ item }) => {
+          const status = STATUS_META[item.status] ?? STATUS_META.pending;
+          return (
+            <SwipeableAppointmentCard
+              isRemoving={item.id === removingItemId}
+              onAnimationComplete={() => {
+                setRemovingItemId(null);
+                invalidateDashboard(); // Animasyon tamamlandıktan sonra veriyi yenile
+              }}
             >
-              <View style={styles.customerInfo}>
-                <Text style={styles.customerName}>{item.userName}</Text>
-                <Text style={styles.serviceType}>
-                  {item.status === "approved"
-                    ? "✅ Onaylandı"
-                    : item.status === "cancelled"
-                      ? "❌ İptal Edildi"
-                      : "⏳ Onay Bekliyor"}
-                </Text>
-              </View>
-
-              <View style={{ alignItems: "flex-end" }}>
-                <Text style={styles.timeText}>{item.time}</Text>
-                <Text style={[styles.statLabel, { marginTop: 4 }]}>
-                  {item.totalPrice} ₺
-                </Text>
-              </View>
-
-              {/* Sadece beklemedeyse butonları göster */}
-              {item.status === "pending" && (
-                <View style={[styles.actionButtons, { marginLeft: 15 }]}>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => handleCancel(item.id)}
-                  >
-                    <Text style={[styles.buttonText, { color: Colors.error }]}>
-                      ❌
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.confirmButton}
-                    onPress={() => handleAccept(item.id)}
-                  >
-                    <Text style={styles.buttonText}>Onayla</Text>
-                  </TouchableOpacity>
+              <View
+                style={[
+                  styles.appointmentCard,
+                  { borderLeftColor: status.color },
+                ]}
+              >
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {getInitials(item.userName)}
+                  </Text>
                 </View>
-              )}
-            </View>
-          </SwipeableAppointmentCard>
-        )}
+
+                <View style={styles.customerInfo}>
+                  <Text style={styles.customerName} numberOfLines={1}>
+                    {item.userName}
+                  </Text>
+                  <View
+                    style={[styles.statusPill, { backgroundColor: status.bg }]}
+                  >
+                    <View
+                      style={[styles.statusDot, { backgroundColor: status.color }]}
+                    />
+                    <Text style={[styles.statusText, { color: status.color }]}>
+                      {status.label}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.timeBlock}>
+                  <Text style={styles.timeText}>{item.time}</Text>
+                  <Text style={styles.priceText}>{item.totalPrice} ₺</Text>
+                </View>
+
+                {/* Sadece beklemedeyse butonları göster */}
+                {item.status === "pending" && (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      style={styles.cancelButton}
+                      onPress={() => handleCancel(item.id)}
+                    >
+                      <Text style={styles.cancelIcon}>✕</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      style={styles.confirmButton}
+                      onPress={() => handleAccept(item.id)}
+                    >
+                      <Text style={styles.buttonText}>Onayla</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </SwipeableAppointmentCard>
+          );
+        }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -155,21 +177,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
   },
 
   // 📈 Başlık ve Özet Alanı
   headerSection: {
-    marginBottom: 25,
+    marginBottom: 26,
     marginTop: 10,
   },
   welcomeText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.textMuted,
-    fontFamily: "System", // Varsa özel fontun buraya
+    fontWeight: "500",
   },
   userNameText: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "800",
     color: Colors.text,
     marginTop: 4,
@@ -179,21 +201,19 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 25,
+    marginBottom: 26,
   },
   statCard: {
     backgroundColor: Colors.surface,
     width: width / 2 - 30,
     padding: 18,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.border,
-    // Hafif gölge (iOS)
-    shadowColor: "#000",
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    // Gölge (Android)
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
     elevation: 8,
   },
   statLabel: {
@@ -201,68 +221,151 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   statValue: {
-    color: Colors.primary, // Kazancı simgeleyen yeşil 🟢
-    fontSize: 20,
-    fontWeight: "bold",
+    color: Colors.primary,
+    fontSize: 21,
+    fontWeight: "800",
     marginTop: 8,
+  },
+
+  sectionLabel: {
+    color: Colors.textFaint,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 14,
   },
 
   // 🗓️ Randevu Kartı: Profesyonel Liste
   appointmentCard: {
     backgroundColor: Colors.surface,
-    padding: 16,
-    borderRadius: 14,
+    padding: 14,
+    borderRadius: 18,
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     borderLeftWidth: 4,
-    borderLeftColor: Colors.accent, // Bekleyen randevular için Amber sarısı
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.surfaceElevated,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  avatarText: {
+    color: Colors.primary,
+    fontWeight: "800",
+    fontSize: 14,
   },
   customerInfo: {
     flex: 1,
   },
   customerName: {
     color: Colors.text,
-    fontSize: 17,
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginRight: 5,
+  },
+  statusText: {
+    fontSize: 11,
     fontWeight: "700",
   },
-  serviceType: {
-    color: Colors.textMuted,
-    fontSize: 14,
-    marginTop: 2,
+  timeBlock: {
+    alignItems: "flex-end",
+    marginLeft: 8,
   },
   timeText: {
     color: Colors.text,
-    fontWeight: "bold",
+    fontWeight: "800",
     fontSize: 15,
+  },
+  priceText: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: "600",
   },
 
   // ✅ Aksiyon Butonları (Kazanç Odaklı)
   actionButtons: {
     flexDirection: "row",
-    gap: 10,
+    marginLeft: 10,
+    gap: 6,
   },
   confirmButton: {
-    backgroundColor: Colors.primary, // Zümrüt Yeşili (Psikolojik ödül)
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: Colors.primary,
+    paddingVertical: 9,
+    paddingHorizontal: 13,
+    borderRadius: 10,
+    justifyContent: "center",
   },
   cancelButton: {
-    backgroundColor: "transparent",
+    backgroundColor: Colors.errorMuted,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.error,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
   },
   buttonText: {
-    color: Colors.white,
-    fontWeight: "bold",
+    color: Colors.background,
+    fontWeight: "800",
     fontSize: 12,
+  },
+  cancelIcon: {
+    color: Colors.error,
+    fontWeight: "800",
+    fontSize: 13,
+  },
+
+  // ⭘ Boş Durum
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 50,
+  },
+  emptyIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  emptyIcon: {
+    fontSize: 24,
+  },
+  emptyText: {
+    color: Colors.textMuted,
+    textAlign: "center",
+    fontSize: 15,
+    paddingHorizontal: 40,
   },
 
   // 🚪 Çıkış ve Yan Butonlar

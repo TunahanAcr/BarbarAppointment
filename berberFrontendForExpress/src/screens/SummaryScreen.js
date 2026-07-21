@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "../constants/colors";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
 
@@ -79,28 +80,28 @@ export default function SummaryScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ color: "white", fontSize: 18 }}>← Geri</Text>
+          <Text style={styles.backLink}>← Geri</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Randevu Özeti</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* İşletme bilgisi */}
         <Text style={styles.sectionTitle}>İşletme</Text>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>{barber?.name}</Text>
-          <Text style={{ color: "#888" }}>Aydın, Efeler</Text>
+          <Text style={styles.mutedText}>Aydın, Efeler</Text>
         </View>
 
         {/* Tarih ve Saat */}
         <Text style={styles.sectionTitle}>Zaman</Text>
         <View style={styles.summaryCard}>
           <View style={styles.row}>
-            <Text style={{ color: "#ccc" }}>Tarih:</Text>
+            <Text style={styles.rowLabel}>Tarih:</Text>
             <Text style={styles.summaryValue}>{date} Kasım</Text>
           </View>
           <View style={[styles.row, { marginTop: 10 }]}>
-            <Text style={{ color: "#ccc" }}>Saat:</Text>
+            <Text style={styles.rowLabel}>Saat:</Text>
             <Text style={styles.summaryValue}>{time}</Text>
           </View>
         </View>
@@ -110,33 +111,29 @@ export default function SummaryScreen({ navigation }) {
         <View style={styles.summaryCard}>
           {services.map((service, index) => (
             <View key={index} style={[styles.row, { marginBottom: 8 }]}>
-              <Text style={{ color: "white" }}>{service.name}</Text>
-              <Text style={{ color: "white", fontWeight: "bold" }}>
-                {service.price} TL
-              </Text>
+              <Text style={styles.serviceName}>{service.name}</Text>
+              <Text style={styles.servicePrice}>{service.price} TL</Text>
             </View>
           ))}
 
           {/* Ayırıcı Çizgi */}
-          <View
-            style={{ height: 1, backgroundColor: "#333", marginVertical: 10 }}
-          ></View>
+          <View style={styles.divider} />
 
           {/* Toplam Fiyat */}
           <View style={styles.row}>
-            <Text style={{ color: "#ccc", fontSize: 16 }}>Toplam:</Text>
-            <Text
-              style={{ color: "#f1c40f", fontSize: 20, fontWeight: "bold" }}
-            >
-              {totalPrice} TL
-            </Text>
+            <Text style={styles.totalLabel}>Toplam:</Text>
+            <Text style={styles.totalValue}>{totalPrice} TL</Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Onay Butonu */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
+        <TouchableOpacity
+          style={styles.confirmButton}
+          activeOpacity={0.85}
+          onPress={handleConfirm}
+        >
           <Text style={styles.confirmButtonText}>Randevuyu Onayla</Text>
         </TouchableOpacity>
       </View>
@@ -147,60 +144,93 @@ export default function SummaryScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: Colors.background,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   header: {
     paddingHorizontal: 20,
-    padddingVertical: 20,
-    marginBottom: 10,
+    paddingVertical: 20,
+    marginBottom: 4,
+  },
+  backLink: {
+    color: Colors.textMuted,
+    fontSize: 15,
+    fontWeight: "600",
   },
   content: {
     flex: 1,
-    paddingHorizantal: 20,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "bold",
+    color: Colors.text,
+    fontSize: 19,
+    fontWeight: "800",
     marginTop: 25,
     marginBottom: 15,
   },
   title: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: Colors.text,
+    fontSize: 27,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    marginTop: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#888888",
+    color: Colors.textMuted,
     marginTop: 5,
+  },
+  mutedText: {
+    color: Colors.textMuted,
+  },
+  rowLabel: {
+    color: Colors.textMuted,
+  },
+  serviceName: {
+    color: Colors.text,
+  },
+  servicePrice: {
+    color: Colors.text,
+    fontWeight: "700",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 10,
+  },
+  totalLabel: {
+    color: Colors.textMuted,
+    fontSize: 16,
+  },
+  totalValue: {
+    color: Colors.primary,
+    fontSize: 20,
+    fontWeight: "800",
   },
   // Alt Buton Stilleri
   footer: {
     padding: 20,
-    borderTopWidth: 1, //anlamadım
-    borderTopColor: "#333", //anlamadım
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   //Özet Ekranı Kart Stilleri
   summaryCard: {
-    backgroundColor: "#1E1E1E",
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    padding: 18,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: Colors.border,
   },
   summaryTitle: {
-    color: "white",
+    color: Colors.text,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
     marginBottom: 5,
   },
   summaryValue: {
-    color: "white",
+    color: Colors.text,
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   row: {
     flexDirection: "row",
@@ -208,14 +238,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   confirmButton: {
-    backgroundColor: "#f1c40f",
+    backgroundColor: Colors.primary,
     padding: 18,
     borderRadius: 12,
     alignItems: "center",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   confirmButtonText: {
-    color: "black",
+    color: Colors.background,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
 });

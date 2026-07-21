@@ -5,8 +5,10 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "../constants/colors";
 import api from "../../api";
 import MyInput from "../components/MyInput";
 import MyButton from "../components/MyButton";
@@ -57,10 +59,16 @@ export default function RegisterScreen({ navigation }) {
     }
   };
   return (
-    <SafeAreaView
-      style={[styles.container, { justifyContent: "center", padding: 20 }]}
-    >
-      <Text style={styles.authTitle}>Kayıt Ol</Text>
+    <SafeAreaView style={[styles.container, { justifyContent: "center" }]}>
+      <View style={styles.header}>
+        <View style={styles.logoCircle}>
+          <Text style={styles.logoText}>✂️</Text>
+        </View>
+        <Text style={styles.authTitle}>Kayıt Ol</Text>
+        <Text style={styles.authSubtitle}>
+          Randevu almak için hesabını oluştur
+        </Text>
+      </View>
 
       <MyInput placeholder="İsim" value={name} onChangeText={setName} />
       <MyInput placeholder="E-posta" value={email} onChangeText={setEmail} />
@@ -74,14 +82,12 @@ export default function RegisterScreen({ navigation }) {
       <MyButton title="Kayıt Ol" onPress={handleRegister}></MyButton>
 
       <TouchableOpacity
-        style={{ marginTop: 20 }}
+        style={styles.loginLink}
         onPress={() => navigation.goBack()}
       >
-        <Text style={{ color: "#ccc", textAlign: "center" }}>
+        <Text style={styles.loginText}>
           Zaten hesabın var mı?{" "}
-          <Text style={{ color: "#f1c40f", fontWeight: "bold" }}>
-            Giriş Yap
-          </Text>
+          <Text style={styles.loginTextAccent}>Giriş Yap</Text>
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -91,15 +97,49 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: Colors.background,
     paddingTop: Platform.OS === "android" ? 20 : 0,
+    paddingHorizontal: 24,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primaryMuted,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logoText: {
+    fontSize: 28,
   },
   //Auth Stilleri
   authTitle: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: "white",
+    fontSize: 26,
+    fontWeight: "800",
+    color: Colors.text,
     textAlign: "center",
-    marginBottom: 40,
+  },
+  authSubtitle: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  loginLink: {
+    marginTop: 22,
+  },
+  loginText: {
+    color: Colors.textMuted,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  loginTextAccent: {
+    color: Colors.primary,
+    fontWeight: "800",
   },
 });

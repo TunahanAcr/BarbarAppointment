@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from "../constants/colors";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
 import getNextDays from "../utils/date";
@@ -70,12 +71,15 @@ export default function DetailScreen({ navigation }) {
       {/* Üst başlık ve geri butonu */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ color: "white", fontSize: 18 }}>← Geri</Text>
+          <Text style={styles.backLink}>← Geri</Text>
         </TouchableOpacity>
-        <Text style={styles.title}> Oluştur</Text>
+        <Text style={styles.title}>Randevu Oluştur</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Tarih Seçimi */}
         <Text style={styles.sectionTitle}>Tarih Seçin</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -83,6 +87,7 @@ export default function DetailScreen({ navigation }) {
             <TouchableOpacity
               key={day.id}
               onPress={() => setSelectedDate(day.id)}
+              activeOpacity={0.8}
               style={[
                 styles.dateCard,
                 selectedDate === day.id && styles.selectedCard,
@@ -119,11 +124,12 @@ export default function DetailScreen({ navigation }) {
                 key={index}
                 disabled={isBooked}
                 onPress={() => setSelectedTime(time)}
+                activeOpacity={0.8}
                 style={[
                   styles.timeCard,
                   selectedTime === time && styles.selectedCard,
                   //Eğer doluysa gri ve sönük
-                  isBooked && { backgroundColor: "#333", opacity: 0.5 },
+                  isBooked && styles.bookedCard,
                 ]}
               >
                 <Text
@@ -131,10 +137,7 @@ export default function DetailScreen({ navigation }) {
                     styles.timeText,
                     selectedTime === time && styles.selectedText,
                     //Doluysa üstünü çiz
-                    isBooked && {
-                      textDecorationLine: "line-through",
-                      color: "#555",
-                    },
+                    isBooked && styles.bookedText,
                   ]}
                 >
                   {time}
@@ -153,6 +156,7 @@ export default function DetailScreen({ navigation }) {
             // 0 indexi gelince patlamasın diye null kontrolü
             (selectedDate === null || !selectedTime) && styles.disabledButton,
           ]}
+          activeOpacity={0.85}
           // 0 indexi gelince patlamasın diye null kontrolü
           disabled={selectedDate === null || !selectedTime}
           onPress={() => {
@@ -181,7 +185,7 @@ export default function DetailScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: Colors.background,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   header: {
@@ -189,90 +193,116 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     marginBottom: 10,
   },
+  backLink: {
+    color: Colors.textMuted,
+    fontSize: 15,
+    fontWeight: "600",
+  },
   content: {
     flex: 1,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "bold",
+    color: Colors.text,
+    fontSize: 19,
+    fontWeight: "800",
     marginTop: 25,
     marginBottom: 15,
   },
   title: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: Colors.text,
+    fontSize: 26,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    marginTop: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#888888",
+    color: Colors.textMuted,
     marginTop: 5,
   },
   // Tarih Seçim Stilleri
   dateCard: {
-    width: 60,
-    height: 80,
-    backgroundColor: "#1E1E1E",
-    borderRadius: 12,
+    width: 58,
+    height: 76,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: Colors.border,
   },
   selectedCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   dateText: {
-    color: "#888",
-    fontSize: 14,
-    marginTop: 5,
+    color: Colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 4,
   },
   selectedText: {
-    color: "#000000",
+    color: Colors.background,
+    fontWeight: "800",
   },
   // Saat Seçim Stilleri
   timeContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between,",
+    justifyContent: "space-between",
   },
   timeCard: {
-    width: "30%", // Her Bir time cartı Ekranın %30'unu kaplar
-    paddingVertical: 15,
+    width: "30%",
+    paddingVertical: 14,
     marginRight: 12,
-    backgroundColor: "#1E1E1E",
-    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
     alignItems: "center",
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: Colors.border,
+  },
+  bookedCard: {
+    backgroundColor: Colors.surfaceElevated,
+    opacity: 0.5,
+    borderColor: Colors.border,
   },
   timeText: {
-    color: "#ccc",
-    fontWeight: "bold",
+    color: Colors.text,
+    fontWeight: "700",
+  },
+  bookedText: {
+    textDecorationLine: "line-through",
+    color: Colors.textFaint,
   },
   // Alt Buton Stilleri
   footer: {
     padding: 20,
-    borderTopWidth: 1, //anlamadım
-    borderTopColor: "#333", //anlamadım
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   button: {
-    backgroundColor: "white",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   disabledButton: {
-    backgroundColor: "#555",
+    backgroundColor: Colors.surfaceElevated,
     opacity: 0.7,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
-    color: "black",
-    fontWeight: "bold",
+    color: Colors.background,
+    fontWeight: "800",
     fontSize: 16,
   },
 });

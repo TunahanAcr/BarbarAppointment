@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { registerSchema, loginSchema } = require("../validation");
 
+FAKE_HASH = "$2a$10$7QJ1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z1Z"; //Fake hash for timing attack prevention
+
 //Register
 exports.register = async (req, res) => {
   try {

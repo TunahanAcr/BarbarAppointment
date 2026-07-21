@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import color from "../constants/color";
+import { Colors } from "../constants/colors";
 
 export default function BarberCard({ barber, onPress }) {
   return (
@@ -11,16 +11,25 @@ export default function BarberCard({ barber, onPress }) {
       {/* Bilgiler */}
       <View style={styles.infoContainer}>
         {/* Adı ve Rating Satırı */}
-        <Text style={styles.name}>{barber.name}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {barber.name}
+        </Text>
         <View style={styles.metaRow}>
           <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={14} color="#f1c40f" />
+            <Ionicons name="star" size={13} color={Colors.primary} />
             <Text style={styles.rating}>{barber.rating}</Text>
           </View>
           {/* Konum Satırı */}
-          <Text style={styles.location}>{barber.location}</Text>
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={13} color={Colors.textMuted} />
+            <Text style={styles.location} numberOfLines={1}>
+              {barber.location}
+            </Text>
+          </View>
         </View>
       </View>
+
+      <Ionicons name="chevron-forward" size={18} color={Colors.textFaint} />
     </TouchableOpacity>
   );
 }
@@ -28,61 +37,67 @@ export default function BarberCard({ barber, onPress }) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
-    backgroundColor: color.cardBg,
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
     padding: 10,
-    marginBottom: 15,
-    alignItems: "center", //Dikeyde Ortalama
-    //Hafif Gölge
-    shadowColor: "#000",
+    marginBottom: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: Colors.shadow,
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    elevation: 4,
   },
   image: {
-    width: 100,
-    height: 65,
+    width: 92,
+    height: 68,
     borderRadius: 10,
     resizeMode: "cover",
   },
   infoContainer: {
     flex: 1,
-    marginLeft: 15,
+    marginLeft: 14,
     justifyContent: "center",
   },
-
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
   },
   name: {
-    color: "white",
+    color: Colors.text,
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 6,
+    fontWeight: "800",
+    marginBottom: 7,
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#333",
+    backgroundColor: Colors.surfaceElevated,
     paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 3,
+    borderRadius: 6,
     marginRight: 8,
   },
   rating: {
-    color: "#f1c40f",
+    color: Colors.primary,
     marginLeft: 4,
-    fontWeight: "bold",
+    fontWeight: "800",
     fontSize: 12,
   },
-  location: {
-    color: "#888",
-    fontSize: 13,
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
+  },
+  location: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginLeft: 3,
+    flexShrink: 1,
   },
 });

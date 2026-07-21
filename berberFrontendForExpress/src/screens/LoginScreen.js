@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Colors } from "../constants/colors";
 import api from "../../api";
 import MyInput from "../components/MyInput";
 import MyButton from "../components/MyButton";
@@ -96,23 +97,22 @@ export default function LoginScreen({ navigation }) {
 
   if (checkingAuth) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#121212",
-        }}
-      >
-        <ActivityIndicator size="large" color="#f1c40f" />
+      <View style={styles.splashContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
   return (
-    <SafeAreaView
-      style={[styles.container, { justifyContent: "center", padding: 20 }]}
-    >
-      <Text style={styles.authTitle}>Giriş Yap</Text>
+    <SafeAreaView style={[styles.container, { justifyContent: "center" }]}>
+      <View style={styles.header}>
+        <View style={styles.logoCircle}>
+          <Text style={styles.logoText}>✂️</Text>
+        </View>
+        <Text style={styles.authTitle}>Giriş Yap</Text>
+        <Text style={styles.authSubtitle}>
+          Randevu almak için hesabına gir
+        </Text>
+      </View>
 
       {/* Email kutusu */}
       <MyInput
@@ -136,11 +136,11 @@ export default function LoginScreen({ navigation }) {
       {/* Kayıt Ol Linki */}
       <TouchableOpacity
         onPress={() => navigation.navigate("Register")}
-        style={{ marginTop: 20 }}
+        style={styles.registerLink}
       >
-        <Text style={{ color: "#ccc", textAlign: "center" }}>
+        <Text style={styles.registerText}>
           Hesabın yok mu?{" "}
-          <Text style={{ color: "#f1c40f", fontWeight: "bold" }}>Kayıt Ol</Text>
+          <Text style={styles.registerTextAccent}>Kayıt Ol</Text>
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -150,15 +150,55 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: Colors.background,
     paddingTop: Platform.OS === "android" ? 20 : 0,
+    paddingHorizontal: 24,
+  },
+  splashContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 36,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primaryMuted,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  logoText: {
+    fontSize: 28,
   },
   //Auth Stilleri
   authTitle: {
-    fontSize: 30,
-    fontWeight: "bold",
-    color: "white",
+    fontSize: 26,
+    fontWeight: "800",
+    color: Colors.text,
     textAlign: "center",
-    marginBottom: 40,
+  },
+  authSubtitle: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  registerLink: {
+    marginTop: 22,
+  },
+  registerText: {
+    color: Colors.textMuted,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  registerTextAccent: {
+    color: Colors.primary,
+    fontWeight: "800",
   },
 });

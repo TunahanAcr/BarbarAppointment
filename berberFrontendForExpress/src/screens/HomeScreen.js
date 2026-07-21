@@ -16,7 +16,7 @@ import useAppointmentStore from "../store/useAppointmentStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../api";
 import axios from "axios";
-import color from "../constants/color";
+import { Colors } from "../constants/colors";
 import BarberCard from "../components/BarberCard";
 
 const SearchBar = ({ searchText, onSearch }) => (
@@ -24,12 +24,12 @@ const SearchBar = ({ searchText, onSearch }) => (
     <Ionicons
       name="search"
       size={20}
-      color="#888"
+      color={Colors.textMuted}
       style={{ marginRight: 10 }}
     />
     <TextInput
-      placeholder="Berver veya hizmet ara"
-      placeholderTextColor="#666"
+      placeholder="Berber veya hizmet ara"
+      placeholderTextColor={Colors.textFaint}
       style={styles.searchInput}
       value={searchText}
       onChangeText={onSearch}
@@ -45,7 +45,7 @@ const SearchBar = ({ searchText, onSearch }) => (
       <Ionicons
         name="close-circle"
         size={20}
-        color="#888"
+        color={Colors.textMuted}
         onPress={() => onSearch("")} //Temizle
       />
     )}
@@ -190,14 +190,14 @@ export default function HomeScreen({ navigation, route }) {
           { justifyContent: "center", alignItems: "center" },
         ]}
       >
-        <ActivityIndicator size="large" color="#f1c40f" />
-        <Text style={{ color: "white", marginTop: 10 }}>Yükleniyor...</Text>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
       </SafeAreaView>
     );
   }
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar style="light-content" />
+      <StatusBar barStyle="light-content" />
 
       {/* Header Kısmı */}
       {/* Ana kapsayıcı: Satır (row) olarak dizecek ve iki uca yaslayacak */}
@@ -220,10 +220,13 @@ export default function HomeScreen({ navigation, route }) {
         renderItem={renderBarberItem} //Her Satırda Ne Basılacak
         ListHeaderComponent={<CampaignHeader />}
         ListEmptyComponent={
-          <Text style={styles.sectionTitle}> Hiçbir Berber Bulunamadı</Text>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Hiçbir berber bulunamadı</Text>
+          </View>
         }
         keyExtractor={(item) => item._id} // Benzersiz Anahtar
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
@@ -232,93 +235,95 @@ export default function HomeScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: color.background,
+    backgroundColor: Colors.background,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   header: {
     paddingHorizontal: 20,
-    padddingVertical: 20, // bir sikim değişmiyor
-    marginBottom: 10,
+    paddingVertical: 20,
+    marginBottom: 4,
   },
   content: {
     flex: 1,
-    paddingHorizantal: 20,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
-    color: color.textPrimary,
+    color: Colors.text,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
     marginTop: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   title: {
-    color: color.textPrimary,
-    fontSize: 24,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: Colors.text,
+    fontSize: 25,
+    fontWeight: "800",
+    letterSpacing: 0.4,
   },
   subtitle: {
     fontSize: 14,
-    color: "#888888",
+    color: Colors.textMuted,
     marginTop: 5,
   },
   listContent: {
     padding: 10,
     paddingBottom: 25,
   },
+  loadingText: {
+    color: Colors.textMuted,
+    marginTop: 10,
+  },
+  emptyContainer: {
+    paddingVertical: 30,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: Colors.textFaint,
+    fontSize: 15,
+    fontStyle: "italic",
+  },
 
   //Kampanya Kartı Stilleri
   card: {
-    backgroundColor: color.cardBg,
-    borderRadius: 15,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     overflow: "hidden", //içindeki resmin köşelerden taşmasını önler
     marginBottom: 10,
-  },
-  imagePlaceHolder: {
-    height: 120,
-    backgroundColor: "#333333",
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   cardInfo: {
     padding: 15,
   },
   cardTitle: {
-    color: "white",
+    color: Colors.text,
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
   cardSubTitle: {
-    color: "#ccc",
+    color: Colors.textMuted,
     marginTop: 5,
   },
-
-  //Berber Kartı Stilleri
   campaignImage: {
     width: "100%",
     height: 150,
   },
-  berberImagePlaceHolder: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-    backgroundColor: "#333333",
-  },
-  berberInfo: {
-    marginLeft: 15,
-    flex: 1,
-  },
+
   //Arama Çubuğu
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E1E",
+    backgroundColor: Colors.surface,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     marginHorizontal: 20,
-    marginBottom: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   searchInput: {
     flex: 1,
-    color: "white",
+    color: Colors.text,
     fontSize: 16,
   },
 });

@@ -1,13 +1,14 @@
 import { TextInput, StyleSheet } from "react-native";
+import { Colors } from "../constants/colors";
 
-export default function MyButton({ value, onChangeText, placeholder, secure }) {
+export default function MyInput({ value, onChangeText, placeholder, secure }) {
   return (
     <TextInput
       style={styles.input}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor="#888"
+      placeholderTextColor={Colors.textFaint}
       secureTextEntry={secure}
       autoCapitalize="none"
     />
@@ -16,12 +17,13 @@ export default function MyButton({ value, onChangeText, placeholder, secure }) {
 
 const styles = StyleSheet.create({
   input: {
-    backgroundColor: "#1E1E1E",
-    color: "#fff",
+    backgroundColor: Colors.surface,
+    color: Colors.text,
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    borderRadius: 12,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: Colors.border,
+    fontSize: 16,
   },
 });
