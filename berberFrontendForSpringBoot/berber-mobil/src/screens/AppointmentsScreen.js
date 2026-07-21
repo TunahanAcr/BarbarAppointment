@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { Colors } from "../constants/colors";
 import { useAppointments } from "../hooks/useAppointments";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 const { width } = Dimensions.get("window");
 
@@ -33,6 +35,7 @@ export default function AppointmentsScreen() {
     new Date().toISOString().split("T")[0],
   );
   const [dates, setDates] = useState([]);
+  const [berberId, setBerberId] = useState(null);
 
   // 🗓️ 14 Günlük Şerit Hazırlığı
   useEffect(() => {
@@ -136,7 +139,7 @@ export default function AppointmentsScreen() {
                 <Text style={styles.emptyIcon}>✂️</Text>
               </View>
               <Text style={styles.emptyText}>
-                Seçili gün için randevu planı bulunmamaktadır.
+                Seçili gün için randevu pladdnı bulunmamaktadır.
               </Text>
             </View>
           )}

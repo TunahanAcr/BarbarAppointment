@@ -25,6 +25,8 @@ const seedData = async () => {
       rating: 4.8,
       image:
         "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=1000&auto=format&fit=crop",
+      inviteCode: "MAKAS2024", // Davet kodu eklendi
+      claimed: false, // Hesap doğrulandı
     });
 
     await Service.insertMany([
@@ -62,6 +64,8 @@ const seedData = async () => {
       rating: 4.2,
       image:
         "https://images.unsplash.com/photo-1503951914875-befbb71334d7?q=80&w=1000&auto=format&fit=crop",
+      inviteCode: "MAKAS2025", // Davet kodu eklendi
+      claimed: false, // Hesap doğrulandı
     });
 
     await Service.insertMany([
@@ -93,6 +97,8 @@ const seedData = async () => {
       rating: 4.9,
       image:
         "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=1000&auto=format&fit=crop",
+      inviteCode: "ELITE2024",
+      claimed: false,
     });
 
     await Service.insertMany([
@@ -124,6 +130,8 @@ const seedData = async () => {
       rating: 4.0,
       image:
         "https://images.unsplash.com/photo-1599351431202-6e0c051dd415?q=80&w=1000&auto=format&fit=crop",
+      inviteCode: "KARDEŞLER2024",
+      claimed: false,
     });
 
     await Service.insertMany([
@@ -149,6 +157,8 @@ const seedData = async () => {
       rating: 4.7,
       image:
         "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=1000&auto=format&fit=crop",
+      inviteCode: "BARBERCLUB2024",
+      claimed: false,
     });
 
     await Service.insertMany([
@@ -180,6 +190,8 @@ const seedData = async () => {
       rating: 4.5,
       image:
         "https://images.unsplash.com/photo-1593702295094-aea8c5c13d7b?q=80&w=1000&auto=format&fit=crop",
+      inviteCode: "EFSANE2024",
+      claimed: false,
     });
 
     await Service.insertMany([

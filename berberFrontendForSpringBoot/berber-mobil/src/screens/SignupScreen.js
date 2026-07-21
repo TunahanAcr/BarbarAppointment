@@ -11,10 +11,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/colors";
 import api from "../api";
 
-export default function SignupScreen() {
+
+export default function SignupScreen({ navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
 
   const handleSignup = async () => {
     try {
@@ -22,9 +24,11 @@ export default function SignupScreen() {
         name: name,
         email: email,
         password: password,
+        inviteCode: inviteCode,
       });
       if (response.status === 200 || response.status === 201) {
         Alert.alert("Başarılı", "Kayıt Oluşturuldu");
+        navigation.navigate("Login"); // Kayıt başarılıysa giriş ekranına yönlendir
       }
     } catch (error) {
       console.error("Kayıt sırasında hata oluştu:", error);
@@ -66,6 +70,13 @@ export default function SignupScreen() {
           onChangeText={setPassword}
           secureTextEntry
         />
+        <TextInput
+          style={styles.input}
+          placeholder="Dükkan Kodu"
+          placeholderTextColor={Colors.textFaint}
+          value={inviteCode}
+          onChangeText={setInviteCode}
+        />
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.85}
@@ -73,6 +84,7 @@ export default function SignupScreen() {
         >
           <Text style={styles.buttonText}>Kayıt Ol</Text>
         </TouchableOpacity>
+        
       </View>
     </SafeAreaView>
   );

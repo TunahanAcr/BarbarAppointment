@@ -6,6 +6,8 @@ const BarberSchema = new mongoose.Schema({
   location: String,
   rating: Number,
   image: String, // Url veya dosya yolu
+  inviteCode: String, //Davet kodu
+  claimed: { type: Boolean, default: false }, //Berberin hesabının doğrulanıp doğrulanmadığını gösterir
 });
 
 module.exports = mongoose.model("Barber", BarberSchema);

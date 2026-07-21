@@ -32,6 +32,7 @@ export default function LoginScreen({ navigation }) {
       if (response.status === 200 || response.status === 201) {
         await AsyncStorage.setItem("userName", response.data.name);
         await AsyncStorage.setItem("userEmail", response.data.email);
+        await AsyncStorage.setItem("berberId", response.data.berberId);
 
         login({ email: response.data.email, name: response.data.name });
         Alert.alert("Başarılı", "Giriş Yapıldı");
@@ -75,6 +76,13 @@ export default function LoginScreen({ navigation }) {
           onPress={handleLogin}
         >
           <Text style={styles.buttonText}>Giriş Yap</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate("Signup")}
+        >
+          <Text style={styles.buttonText}>Kayıt ol</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

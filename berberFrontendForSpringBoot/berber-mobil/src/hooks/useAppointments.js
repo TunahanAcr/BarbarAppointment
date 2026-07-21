@@ -1,16 +1,31 @@
 import api from "../api";
-import { berberId } from "../configId";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 
 export const useAppointments = (selectedDate, onlyPending = false) => {
   // O an animasyonla silinen kartın ID'sini tutan state
   const [removingItemId, setRemovingItemId] = useState(null);
+  const [berberId, setBerberId] = useState(null);
   const queryClient = useQueryClient(); //Global cache managera erişim aynı ugulamada 1 kere oluşturulur ve tüm componentlerde kullanılır
+
+   useEffect(() => {
+    const getBerberId = async () => {
+      const id = await AsyncStorage.getItem("berberId");
+      if (id) {
+        setBerberId(id); // State güncellenince sayfa tekrar render olacak
+      }
+    };
+    getBerberId();
+  }, []); // Sadece ilk açılışta çalışı
+
+
   // 🔄 Veri Çekme Fonksiyonu
   const fetchDashboardData = async (date) => {
-    console.log("Veri çekiliyor...");
+
+   
     const requests = [
       api.get(
         `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${date}`,
@@ -25,7 +40,6 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
 
     const [pendingRevenueResponse, netRevenueResponse, appointmentsResponse] =
       await Promise.all(requests);
-    console.log("Randevular:", appointmentsResponse.data);
     return {
       appointments: onlyPending
         ? appointmentsResponse.data.filter((appt) => appt.status === "pending")
@@ -39,6 +53,7 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
     queryKey: ["dashboardData", berberId, selectedDate, { onlyPending }], // Verinin benzersiz anahtarı
     queryFn: () => fetchDashboardData(selectedDate), // Veriyi çekme fonksiyonu
     refetchOnWindowFocus: true,
+    enabled: !!berberId, // berberId varsa çalıştır yoksa çalıştırma
   });
 
   // ✅ Onaylama Fonksiyonu
