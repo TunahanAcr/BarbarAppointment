@@ -7,30 +7,35 @@ import com.berberapp.dashboard.repository.BarberUserRepository;
 import com.berberapp.dashboard.repository.BarberRepository;
 import org.springframework.stereotype.Service;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import com.berberapp.dashboard.service.JwtService;
+
 import java.util.Optional;
 
 @Service
 public class BarberUserService {
+
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final BarberUserRepository barberUserRepository;
     private final BarberRepository barberRepository;
+    private final JwtService jwtService;
 
-    public BarberUserService(BarberUserRepository barberUserRepository, BarberRepository barberRepository) {
+    public BarberUserService(BarberUserRepository barberUserRepository, BarberRepository barberRepository, JwtService jwtService) {
         this.barberUserRepository = barberUserRepository;
         this.barberRepository = barberRepository;
+        this.jwtService = jwtService;
     }
 
-    public Optional<BarberUserModel> isEmailExist(String email) {
-        return barberUserRepository.findByEmail(email);
-        }
+        public BarberUserModel saveNewUser(String name, String email, String password, String berberId) {
 
-    public BarberUserModel saveNewUser(String name, String email, String password, String berberId) {
-        BarberUserModel newUser = new BarberUserModel(null ,name, email, password, berberId, java.time.Instant.now());
+        String hashedPassword = passwordEncoder.encode(password);
+
+        BarberUserModel newUser = new BarberUserModel(null ,name, email, hashedPassword, berberId, java.time.Instant.now());
+
         return barberUserRepository.save(newUser);
     }
 
-    public Optional<BarberUserModel> findUser(String email) {
-        return barberUserRepository.findByEmail(email);
-    }
 
     public BarberUserModel registerUserWithInviteCode (BarberUserController.SignupRequest request) {
         // Email zaten var mı kontrolü
@@ -69,9 +74,21 @@ public class BarberUserService {
          barberRepository.save(updatedBarber);
 
         return savedUser;
-
     }
 
 
+    public String loginUser(String email, String rawPassword) {
+        // Kullanıcıyı Bul
+        BarberUserModel user = barberUserRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+        // Şifreleri karşılaştır
+        boolean isMatch = passwordEncoder.matches(rawPassword, user.password());
+
+        if (!isMatch) {
+            throw new RuntimeException("Hatalı şifre veya email");
+        }
+
+        return jwtService.generateToken(user.name(), user.email(), user.berberId());
+    }
 }
 

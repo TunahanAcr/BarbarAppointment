@@ -42,21 +42,16 @@ public class BarberUserController {
     }
 
     public record LoginRequest(String email, String password) {}
-    public record LoginResponse(String name, String email, String berberId) {}
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login (@RequestBody LoginRequest userInfo) {
-        Optional <BarberUserModel> user = barberUserService.findUser(userInfo.email());
-        // Gelen emaile kayıtlı kullanıcı yoksa
-        if (user.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> login (@RequestBody LoginRequest userInfo) {
+        try {
+            String generatedToken = barberUserService.loginUser(userInfo.email(), userInfo.password());
+            return ResponseEntity.ok(generatedToken);
         }
-        // Şifreler eşleşmiyorsa
-        if (!userInfo.password().equals(user.get().password()) ) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        catch (RuntimeException e) {
+            return  ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        return ResponseEntity.ok(new LoginResponse(user.get().name(), user.get().email(), user.get().berberId()));
 
     }
 }
