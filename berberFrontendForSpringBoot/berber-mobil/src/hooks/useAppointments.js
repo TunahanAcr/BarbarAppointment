@@ -3,29 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 export const useAppointments = (selectedDate, onlyPending = false) => {
+  const { user } = useContext(AuthContext); // AuthContext'ten user bilgilerini alıyoruz
+  const berberId = user?.berberId; // Berber ID'sini user objesinden alıyoruz
+
   // O an animasyonla silinen kartın ID'sini tutan state
   const [removingItemId, setRemovingItemId] = useState(null);
-  const [berberId, setBerberId] = useState(null);
   const queryClient = useQueryClient(); //Global cache managera erişim aynı ugulamada 1 kere oluşturulur ve tüm componentlerde kullanılır
-
-   useEffect(() => {
-    const getBerberId = async () => {
-      const id = await AsyncStorage.getItem("berberId");
-      if (id) {
-        setBerberId(id); // State güncellenince sayfa tekrar render olacak
-      }
-    };
-    getBerberId();
-  }, []); // Sadece ilk açılışta çalışı
-
 
   // 🔄 Veri Çekme Fonksiyonu
   const fetchDashboardData = async (date) => {
-
-   
     const requests = [
       api.get(
         `/dashboard/appointments/barber/${berberId}/price?status=pending&fullDate=${date}`,

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
 
 export const AuthContext = createContext({
   checkingAuth: true,
@@ -17,12 +18,26 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkLogin = async () => {
       try {
-        const userEmail = await AsyncStorage.getItem("userEmail");
-        const userName = await AsyncStorage.getItem("userName");
+        const token = await AsyncStorage.getItem("userToken");
 
-        if (userEmail && userName) {
+        if (token) {
+          const decodedToken = jwtDecode(token);
+
+          if (decodedToken.exp * 1000 < Date.now()) {
+            // Token süresi dolmuş, kullanıcıyı çıkış yap
+            await AsyncStorage.removeItem("userToken");
+            setIsLoggedIn(false);
+            setUser(null);
+            setCheckingAuth(false);
+            return;
+          }
+
           setIsLoggedIn(true);
-          setUser({ email: userEmail, name: userName });
+          setUser({
+            email: decodedToken.sub,
+            name: decodedToken.name,
+            berberId: decodedToken.berberId,
+          });
         } else {
           setIsLoggedIn(false);
           setUser(null);
@@ -39,14 +54,29 @@ export const AuthProvider = ({ children }) => {
     checkLogin();
   }, []);
 
-  const login = (userData) => {
-    setIsLoggedIn(true);
-    setUser(userData);
+  const login = async (token) => {
+    try {
+      // Gelen token'ın ne olduğunu terminalde görelim (Obje mi, String mi?)
+
+      await AsyncStorage.setItem("userToken", token);
+
+      const decodedToken = jwtDecode(token);
+
+      setIsLoggedIn(true);
+      setUser({
+        email: decodedToken.sub,
+        name: decodedToken.name,
+        berberId: decodedToken.berberId,
+      });
+    } catch (error) {
+      // EĞER EKRAN DEĞİŞMİYORSA KESİNLİKLE BU CONSOLE.LOG ÇALIŞACAKTIR
+      console.log("Token çözülürken veya kaydedilirken HATA:", error);
+    }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.multiRemove(["userEmail", "userName"]);
+      await AsyncStorage.removeItem("userToken");
       setIsLoggedIn(false);
       setUser(null);
     } catch (err) {

@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthContext } from "../../context/AuthContext";
 import { Colors } from "../constants/colors";
+import { jwtDecode } from "jwt-decode";
 
 import api from "../api";
 
@@ -30,12 +31,7 @@ export default function LoginScreen({ navigation }) {
         password: password,
       });
       if (response.status === 200 || response.status === 201) {
-        await AsyncStorage.setItem("userName", response.data.name);
-        await AsyncStorage.setItem("userEmail", response.data.email);
-        await AsyncStorage.setItem("berberId", response.data.berberId);
-
-        login({ email: response.data.email, name: response.data.name });
-        Alert.alert("Başarılı", "Giriş Yapıldı");
+        await login(response.data);
       }
     } catch (error) {
       console.error("Giriş sırasında hata oluştu:", error);
