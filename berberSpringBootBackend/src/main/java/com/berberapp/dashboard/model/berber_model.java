@@ -13,6 +13,9 @@ public record berber_model(
 
         String location,
         Double rating,
-        String image) {
+        String image,
+        String inviteCode, // Bu invite code ile userlar ile dükkanlarını eşleyeceğim
+        boolean claimed // Bu berber daha önceden bir userla eşleşmiş mi kontrolü
+) {
 }
 

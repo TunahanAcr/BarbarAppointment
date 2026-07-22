@@ -38,13 +38,9 @@ public class appointmentService { // Burda class tanımladık çünkü kendi bus
     public int getAllPrice(String barberId, String status, String fullDate) {
         List<appointmentModel> appointments = repository.findByBarberIdAndStatusAndFullDate(new ObjectId(barberId), status, fullDate);
 
-        int totalAmount = 0;
-
-        for (appointmentModel appointmentList : appointments) {
-            totalAmount = totalAmount + appointmentList.totalPrice();
-        }
-
-        return totalAmount;
+        return appointments.stream()
+                .mapToInt(appointmentModel::totalPrice) // Listeyi sadece fiyatlardan oluşan sayı listesine çevir
+                .sum(); // Hepsini Topla
     }
 
     public List<appointmentModel> getDailyAppointments(ObjectId barberId, String fullDate) {

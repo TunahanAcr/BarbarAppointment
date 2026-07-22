@@ -9,6 +9,7 @@ public record BarberUserModel(
         String name,
         String email,
         String password,
+        String berberId, // Hangi berberin sahibi
         java.time.Instant createdAt
 ) {
 

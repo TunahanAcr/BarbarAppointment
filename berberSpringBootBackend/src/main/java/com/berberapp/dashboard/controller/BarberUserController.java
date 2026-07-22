@@ -1,9 +1,10 @@
 package com.berberapp.dashboard.controller;
 
 import com.berberapp.dashboard.model.BarberUserModel;
+import com.berberapp.dashboard.repository.BarberUserRepository;
 import com.berberapp.dashboard.service.BarberUserService;
+import com.berberapp.dashboard.repository.BarberRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,29 +13,40 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api")
 public class BarberUserController {
-    private final BarberUserService service;
+    private final BarberUserService barberUserService;
+    private final BarberUserRepository barberUserRepository;
+    private final BarberRepository berber_repository;
 
-    public BarberUserController(BarberUserService service) {
-        this.service = service;
+    public BarberUserController(BarberUserService barberUserService, BarberUserRepository barberUserRepository, BarberRepository berber_repository) {
+        this.barberUserService = barberUserService;
+        this.barberUserRepository = barberUserRepository;
+        this.berber_repository = berber_repository;
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<BarberUserModel> signup (@RequestBody BarberUserModel newUser) {
-       Optional<BarberUserModel> isUserExist = service.isEmailExist(newUser.email());
-       if (isUserExist.isEmpty()) {
-           BarberUserModel savedUser = service.saveNewUser(newUser.name(), newUser.email(), newUser.password());
-           return ResponseEntity.ok(savedUser);
-       }
+    public record SignupRequest(
+            String name,
+            String email,
+            String password,
+            String inviteCode // Kullanıcı berberId yi değil ona verdiğimiz inviteCode unu girecek
+    ) {}
 
-       return ResponseEntity.badRequest().build();
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup (@RequestBody SignupRequest request) {
+        try {
+            BarberUserModel newUser = barberUserService.registerUserWithInviteCode(request) ;
+            return ResponseEntity.ok(newUser);
+        }
+        catch (RuntimeException e) {
+            return  ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     public record LoginRequest(String email, String password) {}
-    public record LoginResponse(String name, String email) {}
+    public record LoginResponse(String name, String email, String berberId) {}
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login (@RequestBody LoginRequest userInfo) {
-        Optional <BarberUserModel> user = service.findUser(userInfo.email());
+        Optional <BarberUserModel> user = barberUserService.findUser(userInfo.email());
         // Gelen emaile kayıtlı kullanıcı yoksa
         if (user.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -44,7 +56,7 @@ public class BarberUserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return ResponseEntity.ok(new LoginResponse(user.get().name(), user.get().email()));
+        return ResponseEntity.ok(new LoginResponse(user.get().name(), user.get().email(), user.get().berberId()));
 
     }
 }
