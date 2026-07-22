@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Dimensions,
 } from "react-native";
+import { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Colors } from "../constants/colors";
@@ -17,9 +18,21 @@ import { SwipeableAppointmentCard } from "../constants/SwipeableAppointmentCard"
 const { width } = Dimensions.get("window");
 
 const STATUS_META = {
-  approved: { label: "Onaylandı", color: Colors.primary, bg: Colors.primaryMuted },
-  cancelled: { label: "İptal Edildi", color: Colors.error, bg: Colors.errorMuted },
-  pending: { label: "Onay Bekliyor", color: Colors.accent, bg: Colors.accentMuted },
+  approved: {
+    label: "Onaylandı",
+    color: Colors.primary,
+    bg: Colors.primaryMuted,
+  },
+  cancelled: {
+    label: "İptal Edildi",
+    color: Colors.error,
+    bg: Colors.errorMuted,
+  },
+  pending: {
+    label: "Onay Bekliyor",
+    color: Colors.accent,
+    bg: Colors.accentMuted,
+  },
 };
 
 const getInitials = (name = "") =>
@@ -33,11 +46,11 @@ const getInitials = (name = "") =>
 
 export default function App() {
   const today = new Date().toISOString().split("T")[0];
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const {
     appointments,
     netDailyRevenue,
     pendingDailyRevenue,
-    refreshing,
     refetch,
     handleAccept,
     handleCancel,
@@ -46,8 +59,10 @@ export default function App() {
     invalidateDashboard,
   } = useAppointments(today, true);
 
-  const onRefresh = () => {
-    invalidateDashboard();
+  const onRefresh = async () => {
+    setIsPullRefreshing(true);
+    await refetch();
+    setIsPullRefreshing(false);
   };
 
   return (
@@ -83,10 +98,10 @@ export default function App() {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isPullRefreshing}
             onRefresh={onRefresh}
             colors={[Colors.primary]}
-            tintColor={Colors.primary}
+            tintColor="#C9A24B"
           />
         }
         ListEmptyComponent={() => (
@@ -129,7 +144,10 @@ export default function App() {
                     style={[styles.statusPill, { backgroundColor: status.bg }]}
                   >
                     <View
-                      style={[styles.statusDot, { backgroundColor: status.color }]}
+                      style={[
+                        styles.statusDot,
+                        { backgroundColor: status.color },
+                      ]}
                     />
                     <Text style={[styles.statusText, { color: status.color }]}>
                       {status.label}
