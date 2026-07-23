@@ -1,1 +1,0 @@
-// İş mantığını ve hesaplamaları yapar

@@ -1,8 +1,8 @@
 //Sadece isteği karşılar (Trafik polisi 👮‍♂️).
 package com.berberapp.dashboard.controller;
 
-import com.berberapp.dashboard.model.appointmentModel; // Dosya isminle aynı olmalı
-import com.berberapp.dashboard.service.appointmentService;
+import com.berberapp.dashboard.model.AppointmentModel; // Dosya isminle aynı olmalı
+import com.berberapp.dashboard.service.AppointmentService;
 import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,17 +13,17 @@ import java.util.List;
 @RequestMapping("/api/dashboard/appointments")
 public class AppointmentController {
 
-    public final appointmentService service;
+    public final AppointmentService service;
 
-    public AppointmentController(appointmentService service) {
+    public AppointmentController(AppointmentService service) {
         this.service = service;
     }
 
     // Test amaçlı ilerde silersin
     // GET /api/dashboard/appointments
     @GetMapping
-    public ResponseEntity<List<appointmentModel>> getAllAppointments(){
-        List<appointmentModel> appointments = service.getAllAppointments();
+    public ResponseEntity<List<AppointmentModel>> getAllAppointments(){
+        List<AppointmentModel> appointments = service.getAllAppointments();
 
         if (appointments.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -35,8 +35,8 @@ public class AppointmentController {
     // Id si gönderilen berbere ait olan bütün randevular zaman farketmeksizin
     // GET /api/dashboard/appointments/barber/{barberId}
     @GetMapping("/barber/{barberId}")
-    public ResponseEntity<List<appointmentModel>>  getByBarber(@PathVariable String barberId) {
-        List<appointmentModel> appointments = service.getByBarber(barberId);
+    public ResponseEntity<List<AppointmentModel>>  getByBarber(@PathVariable String barberId) {
+        List<AppointmentModel> appointments = service.getByBarber(barberId);
 
         if (appointments.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -47,8 +47,8 @@ public class AppointmentController {
 
     // Onay bekleyen randevular
     @GetMapping("/barber/{barberId}/pending")
-    public ResponseEntity<List<appointmentModel>> getPendingAppointments(@PathVariable String barberId) {
-        List<appointmentModel> activeAppointments = service.getPendingAppointments(barberId);
+    public ResponseEntity<List<AppointmentModel>> getPendingAppointments(@PathVariable String barberId) {
+        List<AppointmentModel> activeAppointments = service.getPendingAppointments(barberId);
 
         if (activeAppointments.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -59,12 +59,13 @@ public class AppointmentController {
 
     public static class helperClass {
         public String status;
+        public Boolean isActive;
     }
 
-    // Randevu onaylama
+    // Randevu onaylama/reddetme
     @PatchMapping("/{appointmentId}")
-    public ResponseEntity<appointmentModel> updateAppointmentStatus(@PathVariable String appointmentId, @RequestBody helperClass box) {
-        appointmentModel updatedAppointment = service.updateAppointmentStatus(appointmentId, box.status);
+    public ResponseEntity<AppointmentModel> updateAppointmentStatus(@PathVariable String appointmentId, @RequestBody helperClass box) {
+        AppointmentModel updatedAppointment = service.updateAppointmentStatus(appointmentId, box.status, box.isActive);
 
         return ResponseEntity.ok(updatedAppointment);
         }
@@ -82,8 +83,8 @@ public class AppointmentController {
     }
 
     @GetMapping("/barber/{barberId}/daily")
-    public ResponseEntity<List<appointmentModel>> getDailyAppointments(@PathVariable String barberId, @RequestParam String fullDate) {
-        List<appointmentModel> dailyAppointments = service.getDailyAppointments(new ObjectId(barberId), fullDate);
+    public ResponseEntity<List<AppointmentModel>> getDailyAppointments(@PathVariable String barberId, @RequestParam String fullDate) {
+        List<AppointmentModel> dailyAppointments = service.getDailyAppointments(new ObjectId(barberId), fullDate);
 
         if (dailyAppointments.isEmpty()) {
             return ResponseEntity.noContent().build();

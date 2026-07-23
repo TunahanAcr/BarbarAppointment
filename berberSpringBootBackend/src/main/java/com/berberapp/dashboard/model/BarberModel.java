@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.NotBlank;
 
 @Document(collection = "barbers") // @Document Bu nesnenin MongoDB'deki hangi koleksiyona (tabloya) ait olduğunu söyler.
-public record berber_model(
+public record BarberModel(
         @Id String id,
 
         @NotBlank String name,

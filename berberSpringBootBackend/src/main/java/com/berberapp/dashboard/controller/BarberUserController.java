@@ -23,11 +23,13 @@ public class BarberUserController {
         this.berber_repository = berber_repository;
     }
 
+    // SignUp isteği için DTO
     public record SignupRequest(
             String name,
             String email,
             String password,
-            String inviteCode // Kullanıcı berberId yi değil ona verdiğimiz inviteCode unu girecek
+            String inviteCode, // Kullanıcı berberId yi değil ona verdiğimiz inviteCode unu girecek
+            String role
     ) {}
 
     @PostMapping("/signup")

@@ -10,6 +10,7 @@ public record BarberUserModel(
         String email,
         String password,
         String berberId, // Hangi berberin sahibi
+        String role, // Admin yetkisi vermek için
         java.time.Instant createdAt
 ) {
 
