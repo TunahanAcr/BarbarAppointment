@@ -142,8 +142,8 @@ export default function AppointmentsScreen() {
             <RefreshControl
               refreshing={isPullRefreshing}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor="#C9A24B"
+              tintColor="#C9A24B" // iOS spinner rengi — eksik olan buydu
+              colors={[Colors.primary]} // Android spinner rengi
             />
           }
           ListEmptyComponent={() => (

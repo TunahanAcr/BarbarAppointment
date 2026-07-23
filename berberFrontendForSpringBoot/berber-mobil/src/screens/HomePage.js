@@ -100,8 +100,8 @@ export default function App() {
           <RefreshControl
             refreshing={isPullRefreshing}
             onRefresh={onRefresh}
-            colors={[Colors.primary]}
-            tintColor="#C9A24B"
+            tintColor="#C9A24B" // iOS spinner rengi — eksik olan buydu
+            colors={[Colors.primary]} // Android spinner rengi
           />
         }
         ListEmptyComponent={() => (
@@ -119,10 +119,7 @@ export default function App() {
           return (
             <SwipeableAppointmentCard
               isRemoving={item.id === removingItemId}
-              onAnimationComplete={() => {
-                setRemovingItemId(null);
-                invalidateDashboard(); // Animasyon tamamlandıktan sonra veriyi yenile
-              }}
+              onAnimationComplete={() => {}}
             >
               <View
                 style={[

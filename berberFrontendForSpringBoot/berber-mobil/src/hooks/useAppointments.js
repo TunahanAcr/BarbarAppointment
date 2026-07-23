@@ -77,6 +77,7 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
     // Başarılı Onaylama
     onSuccess: () => {
       console.log("Randevu onaylandı!");
+      invalidateDashboard(); // Dashboard verilerini güncelle
     },
 
     onError: (err) => {
@@ -104,6 +105,7 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
 
     onSuccess: () => {
       console.log("Randevu iptal edildi!");
+      invalidateDashboard(); // Dashboard verilerini güncelle
     },
 
     onError: (err) => {
