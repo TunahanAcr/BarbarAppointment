@@ -13,6 +13,7 @@ import ServiceScreen from "./src/screens/ServiceScreen";
 import DetailScreen from "./src/screens/DetailScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import LoginScreen from "./src/screens/LoginScreen";
+import SuccessScreen from "./src/screens/SuccessScreen";
 
 // Navigasyon Yığını Oluşturma
 const Stack = createNativeStackNavigator();
@@ -87,6 +88,8 @@ export default function App() {
           <Stack.Screen name="Service" component={ServiceScreen} />
 
           <Stack.Screen name="Summary" component={SummaryScreen} />
+
+          <Stack.Screen name="Success" component={SuccessScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       {/* SafeAreaView çentik ve yuvarlak köşeleri hesaba katarak içeriği güvenli bir alanda tutar */}

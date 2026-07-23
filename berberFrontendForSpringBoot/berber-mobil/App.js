@@ -10,6 +10,7 @@ import LoadingScreen from "./src/screens/LoadingScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
 import AppointmentsScreen from "./src/screens/AppointmentsScreen";
 import FinanceScreen from "./src/screens/FinanceScreen";
+import AdminPanelScreen from "./src/screens/AdminPanelScreen";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
 import { Ionicons } from "@expo/vector-icons"; // İkonlar için
 import { Colors } from "./src/constants/colors";
@@ -88,7 +89,7 @@ function MainTabNavigator() {
 }
 
 function RootNavigation() {
-  const { isLoggedIn, checkingAuth } = useContext(AuthContext);
+  const { isLoggedIn, checkingAuth, user } = useContext(AuthContext);
 
   if (checkingAuth) {
     // Yükleme ekranı da koyu temaya uygun olmalı
@@ -102,7 +103,11 @@ function RootNavigation() {
       */}
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
-          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+          user.role === "ADMIN" ? (
+            <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
+          ) : (
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+          )
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />

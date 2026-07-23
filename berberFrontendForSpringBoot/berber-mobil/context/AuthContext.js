@@ -67,6 +67,7 @@ export const AuthProvider = ({ children }) => {
         email: decodedToken.sub,
         name: decodedToken.name,
         berberId: decodedToken.berberId,
+        role: decodedToken.role,
       });
     } catch (error) {
       // EĞER EKRAN DEĞİŞMİYORSA KESİNLİKLE BU CONSOLE.LOG ÇALIŞACAKTIR

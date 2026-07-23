@@ -6,34 +6,33 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/colors";
 import api from "../../api";
 import useAppointmentStore from "../store/useAppointmentStore";
+import { useState } from "react";
 
 export default function SummaryScreen({ navigation }) {
   // Zustanddan gelen veriyi karşılıyoruz
-  const {
-    barber,
-    date,
-    time,
-    services,
-    totalPrice,
-    clearAppointment,
-    fullDate,
-  } = useAppointmentStore();
+  const { barber, date, time, services, totalPrice, fullDate } =
+    useAppointmentStore();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   //Randevuyu Kaydetme Fonskiyonu
   const handleConfirm = async () => {
+    setIsLoading(true); // Yükleniyor durumunu başlat
+
     try {
-      console.log("Fonksiyon Çalıştı");
       //1- Gönderilecek veriyi paketle
       const cleanServices = services.map((service) => ({
         name: service.name,
         duration: service.duration,
         _id: service._id,
       }));
+
       //Gönderilecek Paket Backend Şemasına Uygun
       const appointmentData = {
         barberId: barber._id, //Zustand dan alınıyor
@@ -44,25 +43,14 @@ export default function SummaryScreen({ navigation }) {
         fullDate: fullDate, //Zustand dan alınıyor
       };
 
-      console.log("Gönderilen Randevu Verisi:", appointmentData);
-
       //2- API ye POST REQUEST
       const response = await api.post("/appointments", appointmentData);
 
-      console.log("Randevu Oluşturma Cevabı:", response.data);
       //3- Sonucu Kontrol Et
       if (response.status === 200 || response.status === 201) {
         //Gelen hhtp kodu 200-299 arasında mı diye bakar
-        Alert.alert("Başarılı! 🎉", "Randevunuz oluşturuldu.", [
-          {
-            text: "Tamam",
-            onPress: () => {
-              navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-              clearAppointment();
-            },
-          },
-        ]);
-        navigation.replace("Main");
+
+        navigation.navigate("Success");
       }
     } catch (err) {
       // 4. Hata Yönetimi (Dizi/String fark etmez, patlamaz)
@@ -73,6 +61,8 @@ export default function SummaryScreen({ navigation }) {
         err.response?.data?.errors ||
         "Hata oluştu";
       Alert.alert("Hata", String(msg));
+    } finally {
+      setIsLoading(false); // Yükleniyor durumunu bitir
     }
   };
   return (
@@ -130,11 +120,28 @@ export default function SummaryScreen({ navigation }) {
       {/* Onay Butonu */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.confirmButton}
+          style={[
+            styles.confirmButton,
+            isLoading && { opacity: 0.7 }, // Yüklenirken buton biraz soluklaşsın
+          ]}
           activeOpacity={0.85}
           onPress={handleConfirm}
+          disabled={isLoading} // Çark dönerken butona TIKLANAMAZ!
         >
-          <Text style={styles.confirmButtonText}>Randevuyu Onayla</Text>
+          {isLoading ? (
+            // Yüklenme anında yan yana dönen çark ve metin
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <ActivityIndicator
+                size="small"
+                color="Colors.white"
+                style={{ marginRight: 10 }}
+              />
+              <Text style={styles.confirmButtonText}>Randevu Alınıyor...</Text>
+            </View>
+          ) : (
+            // Normal durumda sadece metin
+            <Text style={styles.confirmButtonText}>Randevuyu Onayla</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

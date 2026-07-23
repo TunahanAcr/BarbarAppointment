@@ -62,6 +62,14 @@ exports.createAppointment = async (req, res) => {
       .status(201)
       .json({ message: "Randevu Başarıyla Oluşturuldu", data: yeniRandevu });
   } catch (err) {
+    if (err.code === 11000) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Üzgünüz, seçtiğiniz saat dolu. Lütfen başka bir saat seçin.",
+        });
+    }
     console.error("Kayıt Hatası", err);
     res.status(500).json({ message: "Bir hata oluştu" });
   }
@@ -130,6 +138,7 @@ exports.cancelAppointment = async (req, res) => {
       {
         //Burada veriyi silmiyoruz sadece "status" diye bir alan uydurup güncelliyoruz
         status: "cancelled",
+        isActive: false, //Randevu iptal edildiğinde aktiflik durumunu false yapıyoruz
       },
       { new: true }, //Güncelennmiş halini bana geri döndür
     );

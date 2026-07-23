@@ -51,14 +51,10 @@ export default function DetailScreen({ navigation }) {
 
       const formattedDate = `${selectedDateObject.day} ${selectedDateObject.name}`;
 
-      console.log("📡 Backend'e sorulan tarih:", formattedDate); // Giden veriyi gör
-
       const response = await api.post("/appointments/availability", {
         barberId: barber._id,
         date: formattedDate,
       });
-
-      console.log("📩 Backend'den gelen dolu saatler:", response.data); // GELEN CEVABI GÖR!
 
       setBookedTimes(response.data);
     } catch (err) {
@@ -76,10 +72,7 @@ export default function DetailScreen({ navigation }) {
         <Text style={styles.title}>Randevu Oluştur</Text>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Tarih Seçimi */}
         <Text style={styles.sectionTitle}>Tarih Seçin</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -169,7 +162,7 @@ export default function DetailScreen({ navigation }) {
             setDateTime(
               formattedDate,
               selectedTime,
-              selectedDayObject.fullDate
+              selectedDayObject.fullDate,
             );
 
             navigation.navigate("Service");

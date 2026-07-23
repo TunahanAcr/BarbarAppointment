@@ -12,13 +12,24 @@ import { Colors } from "../constants/colors";
 import { useAppointments } from "../hooks/useAppointments";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
 const { width } = Dimensions.get("window");
 
 const STATUS_META = {
-  approved: { label: "Onaylandı", color: Colors.primary, bg: Colors.primaryMuted },
-  cancelled: { label: "İptal Edildi", color: Colors.error, bg: Colors.errorMuted },
-  pending: { label: "Onay Bekliyor", color: Colors.accent, bg: Colors.accentMuted },
+  approved: {
+    label: "Onaylandı",
+    color: Colors.primary,
+    bg: Colors.primaryMuted,
+  },
+  cancelled: {
+    label: "İptal Edildi",
+    color: Colors.error,
+    bg: Colors.errorMuted,
+  },
+  pending: {
+    label: "Onay Bekliyor",
+    color: Colors.accent,
+    bg: Colors.accentMuted,
+  },
 };
 
 const getInitials = (name = "") =>
@@ -36,6 +47,7 @@ export default function AppointmentsScreen() {
   );
   const [dates, setDates] = useState([]);
   const [berberId, setBerberId] = useState(null);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
 
   // 🗓️ 14 Günlük Şerit Hazırlığı
   useEffect(() => {
@@ -51,15 +63,16 @@ export default function AppointmentsScreen() {
   const {
     appointments,
     netDailyRevenue,
-    refreshing,
     refetch,
     handleAccept,
     handleCancel,
     invalidateDashboard,
   } = useAppointments(selectedDate);
 
-  const onRefresh = () => {
-    invalidateDashboard();
+  const onRefresh = async () => {
+    setIsPullRefreshing(true); // Spinner'ı indir
+    await refetch(); // TanStack'in veriyi çekip bitirmesini bekle
+    setIsPullRefreshing(false); // İşlem bitince spinner'ı geri topla
   };
 
   return (
@@ -127,10 +140,10 @@ export default function AppointmentsScreen() {
           contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
+              refreshing={isPullRefreshing}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
+              tintColor="#C9A24B" // iOS spinner rengi — eksik olan buydu
+              colors={[Colors.primary]} // Android spinner rengi
             />
           }
           ListEmptyComponent={() => (
@@ -166,7 +179,10 @@ export default function AppointmentsScreen() {
                     style={[styles.statusPill, { backgroundColor: status.bg }]}
                   >
                     <View
-                      style={[styles.statusDot, { backgroundColor: status.color }]}
+                      style={[
+                        styles.statusDot,
+                        { backgroundColor: status.color },
+                      ]}
                     />
                     <Text style={[styles.statusText, { color: status.color }]}>
                       {status.label}
