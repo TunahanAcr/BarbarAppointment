@@ -16,15 +16,8 @@ import { useState } from "react";
 
 export default function SummaryScreen({ navigation }) {
   // Zustanddan gelen veriyi karşılıyoruz
-  const {
-    barber,
-    date,
-    time,
-    services,
-    totalPrice,
-    clearAppointment,
-    fullDate,
-  } = useAppointmentStore();
+  const { barber, date, time, services, totalPrice, fullDate } =
+    useAppointmentStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -125,7 +118,6 @@ export default function SummaryScreen({ navigation }) {
       </ScrollView>
 
       {/* Onay Butonu */}
-      {/* Onay Butonu */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
@@ -141,7 +133,7 @@ export default function SummaryScreen({ navigation }) {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <ActivityIndicator
                 size="small"
-                color="#ffffff"
+                color="Colors.white"
                 style={{ marginRight: 10 }}
               />
               <Text style={styles.confirmButtonText}>Randevu Alınıyor...</Text>

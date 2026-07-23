@@ -101,6 +101,7 @@ export const useAppointments = (selectedDate, onlyPending = false) => {
     mutationFn: (id) =>
       api.patch(`/dashboard/appointments/${id}`, {
         status: "cancelled",
+        isActive: false,
       }),
 
     onSuccess: () => {

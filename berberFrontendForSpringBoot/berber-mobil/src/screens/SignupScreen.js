@@ -11,7 +11,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/colors";
 import api from "../api";
 
-
 export default function SignupScreen({ navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,6 +24,7 @@ export default function SignupScreen({ navigation }) {
         email: email,
         password: password,
         inviteCode: inviteCode,
+        role: "User",
       });
       if (response.status === 200 || response.status === 201) {
         Alert.alert("Başarılı", "Kayıt Oluşturuldu");
@@ -84,7 +84,6 @@ export default function SignupScreen({ navigation }) {
         >
           <Text style={styles.buttonText}>Kayıt Ol</Text>
         </TouchableOpacity>
-        
       </View>
     </SafeAreaView>
   );
